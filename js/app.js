@@ -1,12 +1,20 @@
 (function(){
 'use strict';
 // ---------- data ----------
-var SOUNDS=['ㄓ','ㄗ','ㄔ','ㄘ','ㄕ','ㄙ'];
-var PAIR={'ㄓ':'ㄗ','ㄗ':'ㄓ','ㄔ':'ㄘ','ㄘ':'ㄔ','ㄕ':'ㄙ','ㄙ':'ㄕ'};
-var GROUP3={'ㄓ':['ㄓ','ㄗ','ㄔ'],'ㄗ':['ㄗ','ㄓ','ㄘ'],'ㄔ':['ㄔ','ㄘ','ㄕ'],'ㄘ':['ㄘ','ㄔ','ㄙ'],'ㄕ':['ㄕ','ㄙ','ㄓ'],'ㄙ':['ㄙ','ㄕ','ㄗ']};
-var EXAMPLE={'ㄓ':'蜘蛛的蜘','ㄗ':'自己的自','ㄔ':'吃飯的吃','ㄘ':'刺蝟的刺','ㄕ':'老師的師','ㄙ':'松鼠的松'};
-var EXSHORT={'ㄓ':'蜘','ㄗ':'自','ㄔ':'吃','ㄘ':'刺','ㄕ':'師','ㄙ':'松'};
+var INITS=['ㄓ','ㄗ','ㄔ','ㄘ','ㄕ','ㄙ'];
+var FINS=['ㄣ','ㄥ','ㄢ','ㄤ','ㄟ','ㄝ','ㄡ','ㄛ'].filter(function(f){return window.ZY_RAW_F&&window.ZY_RAW_F[f];});
+var SOUNDS=INITS.concat(FINS);
+var ISFIN={};FINS.forEach(function(f){ISFIN[f]=1;});
+var PAIR={'ㄓ':'ㄗ','ㄗ':'ㄓ','ㄔ':'ㄘ','ㄘ':'ㄔ','ㄕ':'ㄙ','ㄙ':'ㄕ','ㄣ':'ㄥ','ㄥ':'ㄣ','ㄢ':'ㄤ','ㄤ':'ㄢ','ㄟ':'ㄝ','ㄝ':'ㄟ','ㄡ':'ㄛ','ㄛ':'ㄡ'};
+var GROUP3={'ㄓ':['ㄓ','ㄗ','ㄔ'],'ㄗ':['ㄗ','ㄓ','ㄘ'],'ㄔ':['ㄔ','ㄘ','ㄕ'],'ㄘ':['ㄘ','ㄔ','ㄙ'],'ㄕ':['ㄕ','ㄙ','ㄓ'],'ㄙ':['ㄙ','ㄕ','ㄗ'],
+ 'ㄣ':['ㄣ','ㄥ','ㄢ'],'ㄥ':['ㄥ','ㄣ','ㄤ'],'ㄢ':['ㄢ','ㄤ','ㄣ'],'ㄤ':['ㄤ','ㄢ','ㄥ'],'ㄟ':['ㄟ','ㄝ','ㄞ'],'ㄝ':['ㄝ','ㄟ','ㄚ'],'ㄡ':['ㄡ','ㄛ','ㄠ'],'ㄛ':['ㄛ','ㄡ','ㄜ']};
+var EXAMPLE={'ㄓ':'蜘蛛的蜘','ㄗ':'自己的自','ㄔ':'吃飯的吃','ㄘ':'刺蝟的刺','ㄕ':'老師的師','ㄙ':'松鼠的松',
+ 'ㄣ':'大門','ㄥ':'電燈','ㄢ':'雞蛋','ㄤ':'糖果','ㄟ':'飛機','ㄝ':'蝴蝶','ㄡ':'小狗','ㄛ':'婆婆'};
+var EXSHORT={'ㄓ':'蜘','ㄗ':'自','ㄔ':'吃','ㄘ':'刺','ㄕ':'師','ㄙ':'松','ㄣ':'門','ㄥ':'燈','ㄢ':'蛋','ㄤ':'糖','ㄟ':'飛','ㄝ':'蝶','ㄡ':'狗','ㄛ':'婆','ㄞ':'愛','ㄚ':'啊','ㄠ':'貓','ㄜ':'鵝'};
 var SKEY={'ㄓ':'zh','ㄗ':'z','ㄔ':'ch','ㄘ':'c','ㄕ':'sh','ㄙ':'s'};
+// 韻母的符號讀音用教育部《國語注音符號手冊》錄音（audio/bpmf_XX.mp3）
+var BPMF={'ㄛ':'bpmf_23','ㄝ':'bpmf_25','ㄟ':'bpmf_27','ㄡ':'bpmf_29','ㄢ':'bpmf_30','ㄣ':'bpmf_31','ㄤ':'bpmf_32','ㄥ':'bpmf_33'};
+function soundKey(s){return ISFIN[s]?BPMF[s]:'sy_'+SKEY[s];}
 var NMIS=8,QPER=10;
 var PLANET={
  'ㄓ':{name:'蜘蛛星',color:'linear-gradient(135deg,#ff9f43,#ee5253)',icon:'🕷️',tip:'捲舌音：舌尖往上翹，碰到上牙齦後面'},
@@ -14,12 +22,22 @@ var PLANET={
  'ㄔ':{name:'吃飯星',color:'linear-gradient(135deg,#feca57,#ff9f43)',icon:'🍚',tip:'捲舌音：舌尖翹起來，再用力送一口氣'},
  'ㄘ':{name:'刺蝟星',color:'linear-gradient(135deg,#1dd1a1,#10ac84)',icon:'🦔',tip:'平舌音：舌頭平平的，送出一口氣'},
  'ㄕ':{name:'獅子星',color:'linear-gradient(135deg,#ff6b6b,#c44569)',icon:'🦁',tip:'捲舌音：舌尖翹起來，讓氣從縫裡慢慢出來'},
- 'ㄙ':{name:'松鼠星',color:'linear-gradient(135deg,#a29bfe,#6c5ce7)',icon:'🐿️',tip:'平舌音：舌頭平平的，像蛇一樣「ㄙ～」'}
+ 'ㄙ':{name:'松鼠星',color:'linear-gradient(135deg,#a29bfe,#6c5ce7)',icon:'🐿️',tip:'平舌音：舌頭平平的，像蛇一樣「ㄙ～」'},
+ 'ㄣ':{name:'大門星',color:'linear-gradient(135deg,#f78fb3,#e66767)',icon:'🚪',tip:'前鼻音：最後舌尖頂住上牙齦，嘴巴不要張大，「ㄣ」收得短短的'},
+ 'ㄥ':{name:'燈籠星',color:'linear-gradient(135deg,#f8a5c2,#c44569)',icon:'🏮',tip:'後鼻音：最後舌頭往後縮、舌根抬高，聲音在鼻子裡嗡嗡響「ㄥ～」'},
+ 'ㄢ':{name:'雞蛋星',color:'linear-gradient(135deg,#63cdda,#3dc1d3)',icon:'🥚',tip:'前鼻音：嘴巴先張開唸「ㄚ」，最後舌尖頂到上牙齦'},
+ 'ㄤ':{name:'糖果星',color:'linear-gradient(135deg,#778beb,#546de5)',icon:'🍬',tip:'後鼻音：嘴巴張大唸「ㄚ」，最後舌根往後抬，聲音從鼻子出來'},
+ 'ㄟ':{name:'飛機星',color:'linear-gradient(135deg,#f7d794,#f19066)',icon:'✈️',tip:'從「ㄝ」滑到「ㄧ」，嘴角慢慢往兩邊拉開「ㄟ～」'},
+ 'ㄝ':{name:'蝴蝶星',color:'linear-gradient(135deg,#cf6a87,#786fa6)',icon:'🦋',tip:'嘴巴半開、不要動，常跟ㄧ、ㄩ一起出現，像「葉」「月」的尾巴'},
+ 'ㄡ':{name:'狗狗星',color:'linear-gradient(135deg,#e15f41,#c44569)',icon:'🐶',tip:'從「ㄛ」滑到「ㄨ」，嘴巴最後收成小小的圓'},
+ 'ㄛ':{name:'菠蘿星',color:'linear-gradient(135deg,#f5cd79,#e77f67)',icon:'🍍',tip:'嘴巴圓圓的、從頭到尾不要動，像「喔」'}
 };
 var MIXES=[['ㄓ','ㄗ','ㄓㄗ雙子星','linear-gradient(135deg,#ff9f43,#0abde3)'],['ㄔ','ㄘ','ㄔㄘ雙子星','linear-gradient(135deg,#feca57,#10ac84)'],['ㄕ','ㄙ','ㄕㄙ雙子星','linear-gradient(135deg,#ff6b6b,#6c5ce7)']];
+var MIXES_F=[['ㄣ','ㄥ','ㄣㄥ雙子星','linear-gradient(135deg,#e66767,#c44569)'],['ㄢ','ㄤ','ㄢㄤ雙子星','linear-gradient(135deg,#3dc1d3,#546de5)'],['ㄟ','ㄝ','ㄟㄝ雙子星','linear-gradient(135deg,#f19066,#786fa6)'],['ㄡ','ㄛ','ㄡㄛ雙子星','linear-gradient(135deg,#c44569,#e77f67)']].filter(function(m){return ISFIN[m[0]]&&ISFIN[m[1]];});
+var MIXES_I=MIXES;MIXES=MIXES_I.concat(MIXES_F);
 var WORDS={},ALL=[];
 SOUNDS.forEach(function(s){
-  WORDS[s]=window.ZY_RAW[s].trim().split('\n').map(function(line,i){
+  WORDS[s]=(ISFIN[s]?window.ZY_RAW_F[s]:window.ZY_RAW[s]).trim().split('\n').map(function(line,i){
     var p=line.trim().split('|');
     var w={id:p[0],sound:s,word:p[0],zy:p[1].split(' '),emoji:p[2],t:parseInt(p[3],10),alts:p[4]?p[4].split(';').map(function(a){return a.split(' ');}):[],aud:p[5]};
     ALL.push(w);return w;
@@ -27,6 +45,12 @@ SOUNDS.forEach(function(s){
 });
 var BYID={};ALL.forEach(function(w){BYID[w.id]=w;});
 function idsOf(s){return WORDS[s].map(function(w){return w.id;});}
+// 最小對比詞（只差一個韻母的兩個真詞），雙子星用
+var MINPAIRS=(window.ZY_MINPAIRS||[]).filter(function(p){return BYID[p[0]]&&BYID[p[1]];});
+// 取出音節中要練習的符號：聲母星取聲母，韻母星取韻母
+var SYLRE=/^(˙)?([ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ])?([ㄧㄨㄩ])?([ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ])?([ˊˇˋ])?$/;
+function unitOf(syl,fin){var m=SYLRE.exec(syl);if(!m)return '';return fin?(m[4]||''):(m[2]||'');}
+function swapUnit(syl,fin,to){if(!fin)return swapInit(syl,to);var m=SYLRE.exec(syl);if(!m||!m[4])return syl;return (m[1]||'')+(m[2]||'')+(m[3]||'')+to+(m[5]||'');}
 
 // ---------- storage ----------
 var KEY='zhuyinSpace.v1';
@@ -120,15 +144,22 @@ function starStr(n,max){max=max||3;var s='';for(var i=0;i<max;i++)s+=i<n?'⭐':'
 
 // ---------- home ----------
 function planetStars(s){var n=0;for(var i=0;i<NMIS;i++)n+=missionStars(s+i);return n;}
+function planetBtn(s){var p=PLANET[s];var pr=qProgress('p:'+s,idsOf(s));
+  return '<button class="planet" data-planet="'+s+'" style="background:'+p.color+'">'+(planetDone(s)?'<span class="badge">🏅</span>':'')+'<div class="orb">'+s+'</div><div class="pname">'+p.icon+' '+p.name+'</div><div class="pstars">⭐ '+planetStars(s)+' / '+(NMIS*3)+'</div><div class="pstars" style="font-size:12px">已練 '+pr.seen+' / '+pr.total+' 詞'+(pr.round>1?'（第 '+pr.round+' 輪）':'')+'</div></button>';}
+function mixBtn(m){var k=m[0]+m[1];
+  return '<button class="planet mix wide" data-mix="'+k+'" style="background:'+m[3]+';min-height:96px">'+((S.mix[k]||0)>0?'<span class="badge">🏅</span>':'')+'<div class="orb">'+m[0]+' VS '+m[1]+'</div><div class="pname">🪐 '+m[2]+'（混合挑戰）</div><div class="pstars">'+starStr(S.mix[k]||0)+'</div></button>';}
 function home(){
   hud();
-  var html='<div class="ship">🚀</div><h1>注音太空探險隊</h1><p class="sub">律恩艦長，選一顆行星出發吧！</p><div class="planet-grid">';
-  SOUNDS.forEach(function(s){var p=PLANET[s];var pr=qProgress('p:'+s,idsOf(s));
-    html+='<button class="planet" data-planet="'+s+'" style="background:'+p.color+'">'+(planetDone(s)?'<span class="badge">🏅</span>':'')+'<div class="orb">'+s+'</div><div class="pname">'+p.icon+' '+p.name+'</div><div class="pstars">⭐ '+planetStars(s)+' / '+(NMIS*3)+'</div><div class="pstars" style="font-size:12px">已練 '+pr.seen+' / '+pr.total+' 詞'+(pr.round>1?'（第 '+pr.round+' 輪）':'')+'</div></button>';});
-  MIXES.forEach(function(m){var k=m[0]+m[1];
-    html+='<button class="planet mix wide" data-mix="'+k+'" style="background:'+m[3]+';min-height:96px">'+((S.mix[k]||0)>0?'<span class="badge">🏅</span>':'')+'<div class="orb">'+m[0]+' VS '+m[1]+'</div><div class="pname">🪐 '+m[2]+'（混合挑戰）</div><div class="pstars">'+starStr(S.mix[k]||0)+'</div></button>';});
+  var html='<div class="ship">🚀</div><h1>注音太空探險隊</h1><p class="sub">律恩艦長，選一顆行星出發吧！</p>';
+  html+='<h2 class="galaxy">🌟 聲母星系 <span>ㄓㄗ・ㄔㄘ・ㄕㄙ</span></h2><div class="planet-grid">';
+  INITS.forEach(function(s){html+=planetBtn(s);});MIXES_I.forEach(function(m){html+=mixBtn(m);});
+  html+='</div>';
+  if(FINS.length){html+='<h2 class="galaxy">🪐 韻母星系 <span>ㄣㄥ・ㄢㄤ・ㄟㄝ・ㄡㄛ</span></h2><div class="planet-grid">';
+    FINS.forEach(function(s){html+=planetBtn(s);});MIXES_F.forEach(function(m){html+=mixBtn(m);});
+    html+='</div>';}
+  html+='<h2 class="galaxy">🛰️ 太空基地</h2><div class="planet-grid">';
   html+='<button class="planet stroke-base wide" id="go-stroke"><div class="orb">ㄅ→ㄦ</div><div class="pname">✍️ 筆順訓練基地</div><div class="pstars">37 個注音・看筆順、跟著寫'+(window.ZYStroke?'・⭐ '+window.ZYStroke.totalStars()+' / 111':'')+'</div></button>';
-  html+='<button class="planet boss wide" id="go-boss">👾 最終測試：聽音寫注音<div class="pstars" style="font-size:15px">聽發音，自己把注音拼出來！</div></button></div>';
+  html+='<button class="planet boss wide" id="go-boss">👾 最終測試：聽音寫注音<div class="pstars" style="font-size:15px">聽發音，自己把注音拼出來！（範圍：'+SCOPE_NAME[bossScope()]+'）</div></button></div>';
   html+='<p class="muted center" style="margin-top:16px">🔊 每一題都可以按喇叭聽發音・每個音 80 個詞，練完一整輪才會重複・進度存在這支手機</p>';
   h(html);
   $app.querySelectorAll('[data-planet]').forEach(function(b){b.onclick=function(){planet(b.getAttribute('data-planet'));};});
@@ -147,26 +178,26 @@ function planet(s){
     html+='<div class="card mission"><div><b>任務 '+(i+1)+'</b>　'+starStr(missionStars(s+i))+'<div class="muted">10 題・新詞</div></div><button class="btn" data-m="'+i+'">出發 🚀</button></div>';}
   html+='<button class="btn ghost" id="back">⬅ 回星圖</button>';
   h(html);
-  document.getElementById('sy-say').onclick=function(){sayKey('sy_'+SKEY[s],s);};
-  document.getElementById('ex-say').onclick=function(){sayKey('ex_'+SKEY[s],EXAMPLE[s]);};
+  document.getElementById('sy-say').onclick=function(){sayKey(soundKey(s),s);};
+  document.getElementById('ex-say').onclick=function(){if(ISFIN[s]&&BYID[EXAMPLE[s]])sayWord(BYID[EXAMPLE[s]]);else sayKey('ex_'+SKEY[s],EXAMPLE[s]);};
   $app.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){var i=+b.getAttribute('data-m');startMission(s,i);};});
   document.getElementById('back').onclick=home;
 }
 
 // ---------- question building ----------
 function makeQ(w,type){
-  var target=w.zy[w.t];var tbody=target.replace('˙','');var init=tbody.charAt(0);
+  var target=w.zy[w.t];var fin=!!ISFIN[w.sound];var init=unitOf(target,fin)||w.sound;
   var q={w:w,type:type};
   if(type==='listen'){
-    q.prompt='聽一聽，<b>黃色的字</b>是哪個聲音？';q.answer=init;q.options=shuffle([init,PAIR[init]]);q.layout='two';q.isInit=true;
+    q.prompt=fin?'聽一聽，<b>黃色的字</b>的韻母是哪一個？':'聽一聽，<b>黃色的字</b>是哪個聲音？';q.answer=init;q.options=shuffle([init,PAIR[init]]);q.layout='two';q.isInit=true;
   }else if(type==='fill'){
     q.prompt='注音少了一個，選出來補上！';q.answer=init;q.options=shuffle(GROUP3[init]);q.layout='three';q.isInit=true;
   }else{ // pick
     q.prompt='哪一個是正確的注音？';q.answer=zyStr(w.zy);
     var opts=[q.answer];
-    var d1=w.zy.slice();d1[w.t]=swapInit(target,PAIR[init]);opts.push(zyStr(d1));
+    var d1=w.zy.slice();d1[w.t]=swapUnit(target,fin,PAIR[init]);opts.push(zyStr(d1));
     var d2=null;
-    for(var i=0;i<w.zy.length;i++){if(i===w.t)continue;var b=w.zy[i].replace('˙','').charAt(0);if(PAIR[b]){var x=w.zy.slice();x[i]=swapInit(w.zy[i],PAIR[b]);d2=zyStr(x);break;}}
+    for(var i=0;i<w.zy.length;i++){if(i===w.t)continue;var b=unitOf(w.zy[i],fin);if(PAIR[b]&&(!!ISFIN[b])===fin){var x=w.zy.slice();x[i]=swapUnit(w.zy[i],fin,PAIR[b]);d2=zyStr(x);break;}}
     if(!d2){var tones=['','ˊ','ˇ','ˋ'];var y=w.zy.slice();var syl=y[w.t];if(syl.charAt(0)==='˙'){y[w.t]=syl.slice(1);}else{var base=syl.replace(/[ˊˇˋ]$/,'');var cur=syl.slice(base.length);var alt=tones.filter(function(t){return t!==cur;});y[w.t]=base+alt[Math.floor(Math.random()*alt.length)];}d2=zyStr(y);}
     var altStrs=w.alts.map(zyStr);
     if(opts.indexOf(d2)<0&&altStrs.indexOf(d2)<0)opts.push(d2);
@@ -174,6 +205,7 @@ function makeQ(w,type){
   }
   return q;
 }
+function makeMP(w,o){return {w:w,other:o,type:'mp',prompt:'🎧 仔細聽，是哪一個詞？<br><span class="muted">兩個詞只差在韻母喔</span>',answer:zyStr(w.zy),options:shuffle([zyStr(w.zy),zyStr(o.zy)]),layout:'single'};}
 var TYPES=['listen','pick','fill'];
 var session=null;
 function startMission(s,i){
@@ -187,6 +219,9 @@ function startMix(a,b){
   var k=a+b;var qs=[];
   [a,b].forEach(function(s){var key='m:'+k+':'+s;qPeek(key,idsOf(s),5).forEach(function(id){qs.push({w:BYID[id],qkey:key});});});
   qs=shuffle(qs).map(function(x,j){var q=makeQ(x.w,j%2?'fill':'listen');q.qkey=x.qkey;if(q.type==='fill'){q.options=shuffle([a,b]);q.layout='two';}return q;});
+  // 韻母雙子星：放進最多 3 題「最小對比詞」（例如 金魚／鯨魚）
+  var mps=shuffle(MINPAIRS.filter(function(p){var s0=BYID[p[0]].sound,s1=BYID[p[1]].sound;return (s0===a&&s1===b)||(s0===b&&s1===a);})).slice(0,3);
+  mps.forEach(function(p,j){var pair=shuffle([BYID[p[0]],BYID[p[1]]]);qs[qs.length-1-j*3]=makeMP(pair[0],pair[1]);});
   session={kind:'mix',key:k,qs:qs,idx:0,firstTry:0,title:'🪐 '+a+' VS '+b+' 雙子星'};
   showQ();
 }
@@ -195,10 +230,11 @@ function showQ(){
   var q=session.qs[session.idx];var w=q.w;var total=session.qs.length;
   var html='<div class="muted">'+session.title+'</div><div class="progress"><i style="width:'+(session.idx/total*100)+'%"></i></div>';
   html+='<p class="q-prompt">'+(q.retried?'<span class="retry-tag">🔁 剛剛錯的，再試一次</span><br>':'')+q.prompt+'</p>';
-  html+='<div class="q-emoji">'+w.emoji+'</div>';
-  html+='<div class="q-word">'+(q.type==='listen'?wordHL(w):esc(w.word))+'</div>';
+  if(q.type==='mp'){html+='<div class="q-emoji">🎧</div><div class="q-word" id="mpword">'+w.word.split('').map(function(){return '❓';}).join('')+'</div>';}
+  else{html+='<div class="q-emoji">'+w.emoji+'</div>';
+  html+='<div class="q-word">'+(q.type==='listen'?wordHL(w):esc(w.word))+'</div>';}
   html+='<button class="speak" id="say">🔊 聽發音</button>';
-  if(q.type==='fill'){html+='<div class="zy-line">'+w.zy.map(function(z,i){if(i!==w.t)return '<span class="syl">'+z+'</span>';var neutral=z.charAt(0)==='˙';var body=neutral?z.slice(1):z;return '<span class="syl">'+(neutral?'˙':'')+'<span class="blank">□</span>'+body.slice(1)+'</span>';}).join('')+'</div>';}
+  if(q.type==='fill'){html+='<div class="zy-line">'+w.zy.map(function(z,i){if(i!==w.t)return '<span class="syl">'+z+'</span>';if(ISFIN[w.sound]){var m=SYLRE.exec(z)||[];return '<span class="syl">'+(m[1]||'')+(m[2]||'')+(m[3]||'')+'<span class="blank">□</span>'+(m[5]||'')+'</span>';}var neutral=z.charAt(0)==='˙';var body=neutral?z.slice(1):z;return '<span class="syl">'+(neutral?'˙':'')+'<span class="blank">□</span>'+body.slice(1)+'</span>';}).join('')+'</div>';}
   html+='<div class="opts '+q.layout+'">'+q.options.map(function(o,k){return '<button class="opt'+(q.isInit?'':' small')+'" data-k="'+k+'">'+o+(q.isInit?'<span class="ex">'+EXSHORT[o]+'</span>':'')+'</button>';}).join('')+'</div>';
   html+='<div class="feedback" id="fb"></div><div id="next-wrap"></div>';
   h(html);
@@ -210,17 +246,19 @@ function showQ(){
     var o=q.options[+b.getAttribute('data-k')];var ok=o===q.answer;var fb=document.getElementById('fb');
     if(!q.retried)record(w,ok,'practice');
     consumeQ(q);
-    if(ok){b.classList.add('ok');if(!q.retried){session.firstTry++;S.fuel++;}fb.className='feedback ok';fb.innerHTML=rnd(PRAISE)+'<small>'+esc(w.word)+'：'+zyStr(w.zy)+'</small>';save();hud();
+    if(ok){b.classList.add('ok');if(!q.retried){session.firstTry++;S.fuel++;}fb.className='feedback ok';fb.innerHTML=rnd(PRAISE)+'<small>'+esc(w.word)+'：'+zyStr(w.zy)+mpNote(q)+'</small>';revealMP(q);save();hud();
       setTimeout(nextQ,1100);}
     else{b.classList.add('bad');$app.querySelectorAll('.opt').forEach(function(x){if(q.options[+x.getAttribute('data-k')]===q.answer)x.classList.add('ok');});
-      fb.className='feedback bad';fb.innerHTML=rnd(CHEER)+'<small>正確答案：<b>'+q.answer+'</b>　'+esc(w.word)+'：'+zyStr(w.zy)+'</small>';
-      if(!q.retried){var r=makeQ(w,q.type);if(session.kind==='mix'&&r.type==='fill'){r.options=shuffle([session.key.charAt(0),session.key.charAt(1)]);r.layout='two';}r.retried=true;r.qkey=q.qkey;session.qs.push(r);}
+      fb.className='feedback bad';fb.innerHTML=rnd(CHEER)+'<small>正確答案：<b>'+q.answer+'</b>　'+esc(w.word)+'：'+zyStr(w.zy)+mpNote(q)+'</small>';revealMP(q);
+      if(!q.retried){var r=q.type==='mp'?makeMP(w,q.other):makeQ(w,q.type);if(session.kind==='mix'&&r.type!=='mp'&&r.type==='fill'){r.options=shuffle([session.key.charAt(0),session.key.charAt(1)]);r.layout='two';}r.retried=true;r.qkey=q.qkey;session.qs.push(r);}
       setTimeout(function(){sayWord(w);},300);save();
       document.getElementById('next-wrap').innerHTML='<button class="btn blue" id="again">🔊 再聽一次</button><button class="btn" id="next">下一題 ➡</button>';
       document.getElementById('again').onclick=function(){sayWord(w);};
       document.getElementById('next').onclick=nextQ;}
   };});
 }
+function mpNote(q){return q.type==='mp'?'<br>另一個是「'+esc(q.other.word)+'」：'+zyStr(q.other.zy):'';}
+function revealMP(q){if(q.type!=='mp')return;var e=document.getElementById('mpword');if(e)e.innerHTML=q.w.emoji+' '+esc(q.w.word);}
 function nextQ(){session.idx++;if(session.idx>=session.qs.length)finishSession();else showQ();}
 function finishSession(){
   var base=session.qs.filter(function(q){return !q.retried;}).length;var c=session.firstTry;
@@ -259,16 +297,20 @@ function gradeWord(w,input){
 function bossIntro(){
   var hist=S.tests.slice(-1)[0];
   h('<div class="big-result">👾</div><h1>最終測試</h1><p class="sub">太空怪獸會唸 20 個詞，<br>請你用注音鍵盤把注音<b>拼出來</b>！</p>'+
-   '<div class="card"><p style="margin:0 0 6px">✏️ 範例：聽到「蜘蛛」→ 寫 <b>ㄓ ㄓㄨ</b></p><p class="muted" style="margin:0">・一個字拼完按「空格」再拼下一個字<br>・一聲不用加符號；輕聲「˙」放前面或後面都可以<br>・可以一直按 🔊 重聽<br>・每次考的詞都不一樣，480 個詞輪流考</p></div>'+
+   '<div class="card"><p style="margin:0 0 6px">✏️ 範例：聽到「蜘蛛」→ 寫 <b>ㄓ ㄓㄨ</b></p><p class="muted" style="margin:0">・一個字拼完按「空格」再拼下一個字<br>・一聲不用加符號；輕聲「˙」放前面或後面都可以<br>・可以一直按 🔊 重聽<br>・每次考的詞都不一樣，'+scopeSounds().reduce(function(n,s){return n+WORDS[s].length;},0)+' 個詞輪流考</p></div>'+
+   '<p class="center" style="margin:6px 0">📋 測試範圍：<b>'+SCOPE_NAME[bossScope()]+'</b><br><span class="muted">（家長可在 👨‍👦 家長專區更改）</span></p>'+
    (hist?'<p class="center muted">上次成績：'+hist.score+' / '+hist.total+'</p>':'')+
    '<button class="btn" id="start">開始挑戰 ⚔️</button><button class="btn ghost" id="back">⬅ 回星圖</button>');
   document.getElementById('start').onclick=startBoss;document.getElementById('back').onclick=home;
 }
 var boss=null;
+var SCOPE_NAME={all:'全部（聲母＋韻母）',init:'聲母 ㄓㄗㄔㄘㄕㄙ',fin:'韻母 ㄣㄥㄢㄤㄟㄝㄡㄛ'};
+function bossScope(){var v=S.settings.bossScope||'all';if(!FINS.length)return 'init';return SCOPE_NAME[v]?v:'all';}
+function scopeSounds(){var v=bossScope();return v==='init'?INITS:v==='fin'?FINS:SOUNDS;}
 function pickBossWords(n){ // 每個音輪流抽，跨次測試不重複（該音 80 詞考完才重洗）
-  var order=shuffle(SOUNDS);var cnt={};SOUNDS.forEach(function(s){cnt[s]=0;});
-  for(var k=0;k<n;k++)cnt[order[k%6]]++;
-  var out=[];SOUNDS.forEach(function(s){qPeek('t:'+s,idsOf(s),cnt[s]).forEach(function(id){out.push(BYID[id]);});});
+  var SS=scopeSounds();var order=shuffle(SS);var cnt={};SS.forEach(function(s){cnt[s]=0;});
+  for(var k=0;k<n;k++)cnt[order[k%SS.length]]++;
+  var out=[];SS.forEach(function(s){qPeek('t:'+s,idsOf(s),cnt[s]).forEach(function(id){out.push(BYID[id]);});});
   return shuffle(out);}
 function startBoss(){boss={words:pickBossWords(20),idx:0,answers:[]};bossQ();}
 function bossQ(){
@@ -321,17 +363,19 @@ function parents(){
   html+='<div class="card"><h2>⚙️ 設定</h2>'+
    '<label class="toggle">最終測試顯示國字（預設隱藏，只聽聲音）<input type="checkbox" id="set-hanzi"'+(S.settings.showHanzi?' checked':'')+'></label>'+
    '<label class="toggle">最終測試顯示圖案提示<input type="checkbox" id="set-emoji"'+(S.settings.showEmoji?' checked':'')+'></label>'+
+   (FINS.length?'<label class="toggle">最終測試範圍　<select id="set-scope" style="font-size:17px"><option value="all">全部（聲母＋韻母）</option><option value="init">只考聲母 ㄓㄗㄔㄘㄕㄙ</option><option value="fin">只考韻母 ㄣㄥㄢㄤㄟㄝㄡㄛ</option></select></label>':'')+
    '<label class="toggle">語速　<select id="set-rate" style="font-size:18px"><option value="0.8">慢</option><option value="1">適中</option><option value="1.15">快</option></select></label>'+
    '<button class="btn blue" id="test-voice" style="font-size:18px">🔊 測試語音（應唸「蜘蛛、自己、吃飯、炸雞、老師、松鼠」）</button>'+
-   '<p class="muted" id="voice-info">發音使用預先錄好的音檔（台灣國語女聲），讀音依教育部辭典校對，不受手機語音設定影響。</p></div>';
+   (FINS.length?'<button class="btn blue" id="test-voice-f" style="font-size:18px">🔊 測試韻母語音（應唸「金魚、鯨魚、開飯、開放、擔心、當心」）</button>':'')+
+   '<p class="muted" id="voice-info">發音使用預先錄好的音檔（台灣國語女聲），讀音依教育部辭典校對，不受手機語音設定影響。韻母星的「符號聲音」用教育部《國語注音符號手冊》錄音。</p></div>';
   html+='<div class="card"><h2>📦 題庫進度（不重複出題）</h2>';
   SOUNDS.forEach(function(s){var a=qProgress('p:'+s,idsOf(s)),t=qProgress('t:'+s,idsOf(s));
-    html+='<div class="bar"><span class="lbl">'+s+'</span><span class="track"><i style="width:'+(a.seen/a.total*100)+'%;background:#74b9ff"></i></span><span class="num">練習 '+a.seen+'/'+a.total+(a.round>1?' 第'+a.round+'輪':'')+'<br>測試 '+t.seen+'/'+t.total+'</span></div>';});
+    html+=(FINS.length&&s===INITS[0]?'<div class="grp">聲母星系</div>':'')+(s===FINS[0]?'<div class="grp">韻母星系</div>':'')+'<div class="bar"><span class="lbl">'+s+'</span><span class="track"><i style="width:'+(a.seen/a.total*100)+'%;background:#74b9ff"></i></span><span class="num">練習 '+a.seen+'/'+a.total+(a.round>1?' 第'+a.round+'輪':'')+'<br>測試 '+t.seen+'/'+t.total+'</span></div>';});
   html+='</div>';
   html+='<div class="card"><h2>📊 各音正確率</h2><p class="muted" style="margin:0">練習＝闖關選擇題（第一次作答）；測試＝聽寫</p>';
   SOUNDS.forEach(function(s){var a=0,c=0,ta=0,tc=0;WORDS[s].forEach(function(w){var st=S.stats[w.id];if(st){a+=st.a;c+=st.c;ta+=st.ta;tc+=st.tc;}});
     var pct=a?Math.round(c/a*100):0;var tp=ta?Math.round(tc/ta*100):null;
-    html+='<div class="bar"><span class="lbl">'+s+'</span><span class="track"><i style="width:'+pct+'%;background:'+(pct>=80?'#64e39b':pct>=60?'#ffd166':'#ff6b81')+'"></i></span><span class="num">練習 '+(a?pct+'%':'—')+'<br>測試 '+(tp===null?'—':tp+'%')+'</span></div>';});
+    html+=(FINS.length&&s===INITS[0]?'<div class="grp">聲母星系</div>':'')+(s===FINS[0]?'<div class="grp">韻母星系</div>':'')+'<div class="bar"><span class="lbl">'+s+'</span><span class="track"><i style="width:'+pct+'%;background:'+(pct>=80?'#64e39b':pct>=60?'#ffd166':'#ff6b81')+'"></i></span><span class="num">練習 '+(a?pct+'%':'—')+'<br>測試 '+(tp===null?'—':tp+'%')+'</span></div>';});
   html+='</div>';
   if(window.ZYStroke)html+=window.ZYStroke.parentsCard();
   var missed=ALL.map(function(w){var st=S.stats[w.id]||{a:0,c:0,ta:0,tc:0};return {w:w,miss:(st.a-st.c)+(st.ta-st.tc),tries:st.a+st.ta};}).filter(function(x){return x.miss>0;}).sort(function(a,b){return b.miss-a.miss;}).slice(0,12);
@@ -344,9 +388,12 @@ function parents(){
   html+='<button class="btn ghost" id="reset" style="color:#ff9aa8">🗑️ 清除所有進度</button><button class="btn" id="back">⬅ 回星圖</button>';
   h(html);
   var r=document.getElementById('set-rate');r.value=String(S.settings.speed||1);
+  var sc=document.getElementById('set-scope');if(sc){sc.value=bossScope();sc.onchange=function(){S.settings.bossScope=sc.value;save();toast('最終測試範圍：'+SCOPE_NAME[sc.value]);};}
   r.onchange=function(){S.settings.speed=parseFloat(r.value);save();};
   document.getElementById('set-hanzi').onchange=function(e){S.settings.showHanzi=e.target.checked;save();};
   document.getElementById('set-emoji').onchange=function(e){S.settings.showEmoji=e.target.checked;save();};
+  var tvf=document.getElementById('test-voice-f');if(tvf)tvf.onclick=function(){var seq=['金魚','鯨魚','開飯','開放','擔心','當心'].map(function(x){return BYID[x];}).filter(Boolean);var i=0;
+    (function next(){if(i>=seq.length)return;var w=seq[i++];playAudio(w.aud,w.word,function(){setTimeout(next,350);});})();};
   document.getElementById('test-voice').onclick=function(){var seq=['蜘蛛','自己','吃飯','炸雞','老師','松鼠'].map(function(x){return BYID[x];}).filter(Boolean);var i=0;
     (function next(){if(i>=seq.length)return;var w=seq[i++];playAudio(w.aud,w.word,function(){setTimeout(next,250);});})();};
   $app.querySelectorAll('[data-say]').forEach(function(b){b.onclick=function(){sayWord(BYID[b.getAttribute('data-say')]);};});
@@ -357,7 +404,7 @@ function parents(){
 document.getElementById('btn-home').onclick=home;
 document.getElementById('btn-parent').onclick=parents;
 // expose for tests
-window.ZY={gradeWord:gradeWord,splitInput:splitInput,ALL:ALL,WORDS:WORDS,BYID:BYID,makeQ:makeQ,state:function(){return S;},qPeek:qPeek,qProgress:qProgress,audioStats:audioStats,
+window.ZY={gradeWord:gradeWord,FINS:FINS,MINPAIRS:MINPAIRS,unitOf:unitOf,swapUnit:swapUnit,bossScope:bossScope,pickBossWords:pickBossWords,splitInput:splitInput,ALL:ALL,WORDS:WORDS,BYID:BYID,makeQ:makeQ,state:function(){return S;},qPeek:qPeek,qProgress:qProgress,audioStats:audioStats,
   get session(){return session;},get boss(){return boss;}};
 if(window.ZYStroke)window.ZYStroke.init({S:function(){return S;},save:save,h:h,home:home,hud:hud,playAudio:playAudio,toast:toast,esc:esc,starStr:starStr});
 home();

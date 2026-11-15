@@ -55,7 +55,7 @@ h2{font-size:22px;margin:8px 0}
 .feedback small{display:block;font-size:17px;font-weight:600;color:#fff;opacity:.9}
 .big-result{text-align:center;font-size:64px}
 .toast-show{opacity:1!important;transform:translate(-50%,0)!important}
-#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#ffd166;color:#1a1a2e;font-weight:800;padding:12px 20px;border-radius:16px;opacity:0;transition:.3s;z-index:20;font-size:18px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#ffd166;color:#1a1a2e;font-weight:800;padding:12px 20px;border-radius:16px;opacity:0;transition:.3s;z-index:20;font-size:18px;pointer-events:none}
 /* boss */
 .answer-box{min-height:72px;background:#fff;color:#1a1a2e;border-radius:16px;font-size:36px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;letter-spacing:2px}
 .answer-box .cur{display:inline-block;width:3px;height:36px;background:#7b2ff7;animation:blink 1s steps(1) infinite}
@@ -117,3 +117,7 @@ h2{font-size:22px;margin:8px 0}
 .zs-pcell{background:rgba(255,255,255,.1);border-radius:10px;text-align:center;padding:4px 0;display:flex;flex-direction:column;font-size:12px}
 .zs-pcell b{font-size:22px}
 .zs-pcell.warn{background:rgba(255,107,129,.3)}
+/* 星系分區 */
+h2.galaxy{font-size:20px;margin:18px 2px 8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+h2.galaxy span{font-size:15px;opacity:.75;font-weight:600}
+.grp{font-size:14px;opacity:.7;margin:12px 0 2px;border-top:1px solid rgba(255,255,255,.15);padding-top:6px}
