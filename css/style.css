@@ -82,3 +82,4 @@ h2{font-size:22px;margin:8px 0}
 .ok-t{color:#64e39b}.bad-t{color:#ff9aa8}
 .center{text-align:center}
 .pair-row{display:flex;gap:8px;justify-content:center;font-size:18px;flex-wrap:wrap}
+.retry-tag{display:inline-block;background:#ffd166;color:#3d2c00;border-radius:999px;padding:2px 10px;font-size:15px;font-weight:800;margin-bottom:4px}
