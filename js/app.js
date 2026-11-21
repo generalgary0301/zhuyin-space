@@ -139,7 +139,7 @@ function missionStars(key){return S.missions[key]||0;}
 function totalStars(){var n=0;for(var k in S.missions)n+=S.missions[k];for(var m in S.mix)n+=S.mix[m];if(window.ZYStroke)n+=window.ZYStroke.totalStars();if(window.ZYRad)n+=window.ZYRad.totalStars();if(window.ZYMath)n+=window.ZYMath.totalStars();return n;}
 function planetDone(s){for(var i=0;i<NMIS;i++){if(!(missionStars(s+i)>0))return false;}return true;}
 function badgeCount(){var n=SOUNDS.filter(planetDone).length;n+=MIXES.filter(function(m){return (S.mix[m[0]+m[1]]||0)>0;}).length;if(S.tests.some(function(t){return t.score/t.total>=0.8;}))n++;if(window.ZYStroke&&window.ZYStroke.allDone())n++;if(window.ZYRad)n+=window.ZYRad.badges();if(window.ZYMath)n+=window.ZYMath.badges();return n;}
-function hud(){document.getElementById('hud-fuel').textContent=S.fuel;document.getElementById('hud-stars').textContent=totalStars();document.getElementById('hud-badges').textContent=badgeCount();}
+function hud(){if(window.ZYReward)try{window.ZYReward.hudBank();}catch(e){}document.getElementById('hud-fuel').textContent=S.fuel;document.getElementById('hud-stars').textContent=totalStars();document.getElementById('hud-badges').textContent=badgeCount();}
 function starStr(n,max){max=max||3;var s='';for(var i=0;i<max;i++)s+=i<n?'⭐':'☆';return s;}
 
 // ---------- home ----------
@@ -180,10 +180,12 @@ function base(){
   var html='<div class="ship">🚀</div><h1>律恩的太空學習基地</h1><p class="sub">艦長，今天要飛去哪一個星系？</p><div class="planet-grid">';
   html+='<button class="planet galaxy-btn wide" id="go-zh" style="background:linear-gradient(135deg,#ff9f43,#ee5253)"><div class="orb" style="font-size:40px">國</div><div class="pname" style="font-size:26px">📖 國語星系</div><div class="pstars">注音符號・部首・筆順</div></button>';
   html+='<button class="planet galaxy-btn wide" id="go-math" style="background:linear-gradient(135deg,#48dbfb,#6c5ce7)"><div class="orb" style="font-size:40px">＋</div><div class="pname" style="font-size:26px">🔢 數學星系</div><div class="pstars">加法・減法・進位退位・心算</div></button></div>';
+  if(window.ZYReward)html+='<div class="planet-grid" style="margin-top:12px">'+window.ZYReward.homeCard()+'</div>';
   html+='<p class="muted center" style="margin-top:16px">內容依教育部十二年國教課綱（國小一、二年級）設計・進度存在這台裝置・右上角 👨‍👦 是家長專區</p>';
   h(html);
   document.getElementById('go-zh').onclick=chinese;
   document.getElementById('go-math').onclick=function(){window.ZYMath.open();};
+  if(window.ZYReward)window.ZYReward.bindHome();
 }
 function chinese(){
   hud();
@@ -303,6 +305,7 @@ function finishSession(){
   html+='<button class="btn" id="again">🔁 再玩一次（換新題）</button><button class="btn blue" id="back">⬅ '+(session.kind==='mission'?'回行星':'回注音練習')+'</button>';
   h(html);sayKey(stars>0?'p_done_good':'p_done_try',stars>0?'任務完成，好棒':'完成練習，加油');
   var sess=session;
+  if(window.ZYReward)window.ZYReward.earn({src:'注音',key:'zy:'+session.kind+':'+session.key,title:session.kind==='mission'?(session.sound+' 任務 '+(session.mi+1)):(session.key.charAt(0)+' VS '+session.key.charAt(1)+' 雙子星'),perfect:c===base});
   document.getElementById('again').onclick=function(){if(sess.kind==='mission')startMission(sess.sound,sess.mi);else startMix(sess.key.charAt(0),sess.key.charAt(1));};
   document.getElementById('back').onclick=function(){if(sess.kind==='mission')planet(sess.sound);else home();};
 }
@@ -384,6 +387,7 @@ function bossResult(){
   html+='<div class="card"><h2>✅ 答對的詞</h2><p style="font-size:18px;line-height:1.8">'+results.filter(function(r){return r.g.ok;}).map(function(r){return esc(r.w.word)+' <span class="muted">'+zyStr(r.w.zy)+'</span>';}).join('<br>')+'</p></div>';
   html+='<button class="btn" id="again">🔁 再挑戰一次（換新詞）</button><button class="btn ghost" id="back">⬅ 回注音練習</button>';
   h(html);sayKey(pct>=0.8?'p_boss_great':'p_boss_ok',pct>=0.8?'太厲害了':'加油，你很棒');
+  if(window.ZYReward)window.ZYReward.earn({src:'注音',key:'zy:boss',title:'最終測試',perfect:score===total});
   $app.querySelectorAll('[data-say]').forEach(function(b){b.onclick=function(){sayWord(BYID[b.getAttribute('data-say')]);};});
   document.getElementById('again').onclick=startBoss;document.getElementById('back').onclick=home;
 }
@@ -391,6 +395,7 @@ function bossResult(){
 // ---------- parents ----------
 function parents(){
   var html='<h1>👨‍👦 家長專區</h1>';
+  if(window.ZYReward)html+=window.ZYReward.parentsCard();
   html+='<div class="card"><h2>⚙️ 設定</h2>'+
    '<label class="toggle">最終測試顯示國字（預設隱藏，只聽聲音）<input type="checkbox" id="set-hanzi"'+(S.settings.showHanzi?' checked':'')+'></label>'+
    '<label class="toggle">最終測試顯示圖案提示<input type="checkbox" id="set-emoji"'+(S.settings.showEmoji?' checked':'')+'></label>'+
@@ -433,11 +438,13 @@ function parents(){
   if(window.ZYStroke)window.ZYStroke.bindParents($app);
   if(window.ZYRad)window.ZYRad.bindParents();
   if(window.ZYMath)window.ZYMath.bindParents();
+  if(window.ZYReward)window.ZYReward.bindParents();
   document.getElementById('reset').onclick=function(){if(confirm('確定要清除所有星星、徽章和紀錄嗎？')){localStorage.removeItem(KEY);load();hud();parents();}};
   document.getElementById('back').onclick=base;
 }
 document.getElementById('btn-home').onclick=base;
 document.getElementById('btn-parent').onclick=parents;
+if(document.getElementById('hud-bank-btn'))document.getElementById('hud-bank-btn').onclick=function(){if(window.ZYReward)window.ZYReward.bank();};
 // expose for tests
 window.ZY={home:home,base:base,chinese:chinese,parents:parents,gradeWord:gradeWord,FINS:FINS,MINPAIRS:MINPAIRS,unitOf:unitOf,swapUnit:swapUnit,bossScope:bossScope,pickBossWords:pickBossWords,splitInput:splitInput,ALL:ALL,WORDS:WORDS,BYID:BYID,makeQ:makeQ,state:function(){return S;},qPeek:qPeek,qProgress:qProgress,audioStats:audioStats,
   get session(){return session;},get boss(){return boss;}};
@@ -445,5 +452,6 @@ if(window.ZYStroke)window.ZYStroke.init({S:function(){return S;},save:save,h:h,h
 var API2={S:function(){return S;},save:save,h:h,hud:hud,playAudio:playAudio,toast:toast,esc:esc,starStr:starStr};
 if(window.ZYRad)window.ZYRad.init(Object.assign({back:chinese},API2));
 if(window.ZYMath)window.ZYMath.init(Object.assign({back:base},API2));
+if(window.ZYReward)window.ZYReward.init(Object.assign({base:base},API2));
 base();
 })();

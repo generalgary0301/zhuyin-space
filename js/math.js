@@ -332,6 +332,9 @@ function makeSet(lv){var seen={},out=[],guard=0;while(out.length<NQ&&guard++<400
 function startLevel(id){var lv=LVBY[id];sess={lv:lv,qs:makeSet(lv),idx:0,first:0,wrong:[],t0:Date.now()};showMQ();}
 function qText(q){if(q.kind==='ten')return q.a+' 和 □ 合起來是 10';return q.a+' '+(q.op==='+'?'＋':'－')+' '+q.b+' ＝ □';}
 function qSay(q){if(q.kind==='ten')return say(numIds(q.a).concat(['m_heq10']));sayQ(q.a,q.op,q.b);}
+function regroup(q){if(q.kind==='ten')return false;var a=q.a,b=q.b,c=0;
+  if(q.op==='+'){while(a||b){var s=a%10+b%10+c;if(s>=10)return true;c=0;a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
+  while(b){if(a%10<b%10)return true;a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
 function qAns(q){return q.kind==='ten'?q.b:q.ans;}
 function colQ(q,val){var len=Math.max(String(q.a).length,String(q.b).length,String(q.ans).length);
   var A=digits(q.a,len),B=digits(q.b,len),V=digits(val||'',len);
@@ -347,7 +350,7 @@ function showMQ(){
   var tries=0;
   bindPad(document,4,function(v){if(q.col)$('qshow').innerHTML=colQ(q,v);else{var ab=$('ab');if(ab)ab.textContent=v===''?'?':v;}},function(v,clear){
     var ok=v===qAns(q);var fb=$('fb');
-    if(ok){if(!q.retried&&tries===0)sess.first++;API.S().fuel++;API.save();API.hud();fb.className='feedback ok';fb.innerHTML=rnd(['答對了！⭐','好厲害！🌟','心算小太空人！🚀','完美！🛸'])+'<small>'+eqStr(q)+'</small>';
+    if(ok){if(!q.retried&&tries===0)sess.first++;if(regroup(q))sess.rg=true;API.S().fuel++;API.save();API.hud();fb.className='feedback ok';fb.innerHTML=rnd(['答對了！⭐','好厲害！🌟','心算小太空人！🚀','完美！🛸'])+'<small>'+eqStr(q)+'</small>';
       say([rnd(['m_ok','m_ok2','m_ok3'])]);$('padw').style.pointerEvents='none';setTimeout(nextMQ,1100);return;}
     tries++;
     if(!q.retried&&tries===1){sess.wrong.push({q:qText(q),ans:qAns(q),input:v,lv:sess.lv.id});var r=JSON.parse(JSON.stringify(q));r.retried=true;sess.qs.push(r);}
@@ -369,7 +372,8 @@ function finishMQ(){
    '<p class="sub" style="font-size:22px">第一次就答對 '+c+' / '+base+' 題<br>'+API.starStr(stars)+'<br><span class="muted">用時 '+Math.floor(secs/60)+' 分 '+(secs%60)+' 秒</span></p>';
   if(sess.wrong.length)html+='<div class="card"><h2>🔧 要再練習的題目</h2><ul class="list">'+sess.wrong.map(function(w){return '<li><div>'+API.esc(w.q.replace('□',String(w.ans)))+'<div class="muted">你寫 '+API.esc(w.input)+'</div></div></li>';}).join('')+'</ul></div>';
   html+='<button class="btn" id="again">🔁 再玩一次（換新題）</button><button class="btn blue" id="back">⬅ 回練習場</button>';
-  API.h(html);say([stars>0?'m_done':'m_done2']);var id=sess.lv.id;$('again').onclick=function(){startLevel(id);};$('back').onclick=practiceList;}
+  API.h(html);say([stars>0?'m_done':'m_done2']);var id=sess.lv.id;
+  if(window.ZYReward)window.ZYReward.earn({src:'數學',key:'math:'+id,title:sess.lv.name,perfect:c===base,regroup:!!sess.rg});$('again').onclick=function(){startLevel(id);};$('back').onclick=practiceList;}
 
 // ---------- ⭐ 進位退位特訓營（一步一步引導） ----------
 var CAMP=[
@@ -412,7 +416,8 @@ function campDone(){var m=M();var r=m.camp[camp.c.id]||(m.camp[camp.c.id]={stars
   var stars=camp.mist===0?3:camp.mist<=2?2:1;if(stars>r.stars)r.stars=stars;
   m.log.push({date:new Date().toISOString(),lv:camp.c.id,camp:1,score:camp.steps-Math.min(camp.steps,camp.mist),total:camp.steps,secs:0,wrong:[]});if(m.log.length>60)m.log=m.log.slice(-60);API.save();API.hud();
   API.h('<div class="big-result">'+(stars===3?'🏆':'🌟')+'</div><h1>特訓完成！</h1><p class="sub" style="font-size:22px">'+camp.steps+' 個步驟，答錯 '+camp.mist+' 次<br>'+API.starStr(stars)+'</p><button class="btn" id="again">🔁 再練一次</button><button class="btn blue" id="back">⬅ 回特訓營</button>');
-  say([stars===3?'m_done':'m_done2']);var id=camp.c.id;$('again').onclick=function(){startCamp(id);};$('back').onclick=campList;}
+  say([stars===3?'m_done':'m_done2']);var id=camp.c.id;
+  if(window.ZYReward)window.ZYReward.earn({src:'數學',key:'camp:'+id,title:'特訓營：'+(camp.c.name||id),perfect:camp.mist===0,regroup:camp.mist<camp.steps});$('again').onclick=function(){startCamp(id);};$('back').onclick=campList;}
 
 // ---------- 數學星系首頁 ----------
 function hub(){stopSay();API.hud();
@@ -444,7 +449,7 @@ function parentsCard(){var m=M();
   return html;}
 function bindParents(){var b=$('test-voice-m');if(b)b.onclick=function(){sayQ(8,'+',5);setTimeout(function(){say(numIds(205),function(){setTimeout(function(){say(numIds(318));},300);});},2600);};}
 
-window.ZYMath={init:function(api){API=api;},open:hub,parentsCard:parentsCard,bindParents:bindParents,totalStars:function(){return starsTotal()+campStars();},
+window.ZYMath={init:function(api){API=api;},_start:function(id){startLevel(id);},get _sess(){return sess;},open:hub,parentsCard:parentsCard,bindParents:bindParents,totalStars:function(){return starsTotal()+campStars();},
   badges:function(){var m=M(),n=0;LEVELS.forEach(function(l){if((m.lv[l.id]||{}).stars===3)n++;});return n;},
   _t:{cn:cn,numIds:numIds,wordsOf:wordsOf,LEVELS:LEVELS,carries:carries,borrows:borrows,sceneFor:sceneFor,genAdd3:genAdd3,genSub3:genSub3,makeSet:makeSet,Player:Player,lessonPage:lessonPage,startLevel:startLevel,startCamp:startCamp,practiceList:practiceList,campList:campList,classroom:classroom,TXT:TXT,get sess(){return sess;},get camp(){return camp;}}};
 })();

@@ -112,6 +112,7 @@ function finish(){var base=quiz.qs.filter(function(q){return !q.retried;}).lengt
   if(quiz.wrong.length)html+='<div class="card"><h2>🔧 要再複習的</h2><ul class="list">'+quiz.wrong.map(function(w){return '<li><div>'+esc(w.ans)+'</div></li>';}).join('')+'</ul></div>';
   html+='<button class="btn" id="again">🔁 再玩一次（換新題）</button><button class="btn blue" id="back">⬅ 回去</button>';
   API.h(html);API.playAudio('rp_done','完成挑戰，好棒');var qq=quiz;
+  if(window.ZYReward)window.ZYReward.earn({src:'部首',key:'rad:'+quiz.key,title:quiz.title,perfect:c===base});
   $('again').onclick=function(){var rs=qq.key==='test'?D.rads:qq.key.indexOf('g:')===0?radsOf(qq.key.slice(2)):[RBY[qq.key.slice(2)]];startQuiz(rs,qq.qs.filter(function(q){return !q.retried;}).length,qq.title,qq.key,qq.back);};
   $('back').onclick=qq.back;}
 

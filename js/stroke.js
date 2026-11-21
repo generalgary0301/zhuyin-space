@@ -211,6 +211,7 @@ function practice(ch,stage){
     if((b=document.getElementById('zs-gridend')))b.onclick=grid;
     document.getElementById('zs-again').onclick=function(){practice(ch,stage);};
     if(allDone())API.toast('🏅 37 個注音筆順全部完成！');
+    if(window.ZYReward)window.ZYReward.earn({src:'筆順',key:'st:'+ch+':'+stage,title:ch+' '+STAGES[stage].n,perfect:perfect,into:box});
   }
   document.getElementById('zs-hint').onclick=hintAnim;
   document.getElementById('zs-clear').onclick=function(){var b=document.querySelector('.zs-done');if(b)b.remove();reset();};
