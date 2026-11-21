@@ -1,6 +1,6 @@
 /* 注音太空探險隊 — 🔢 數學星系：加法、減法教學（動畫）、進位退位特訓營、心算練習場
  * 依十二年國教數學領域課綱：N-1-2 加法和減法、N-1-3 基本加減法（合十、拆十）、N-2-2 加減直式計算（加法含二次進位、減法限一次退位、含 0 的題型）。
- * 語音：預先錄好的音檔（audio/m_*.mp3、audio/n_*.mp3、audio/q_*.mp3），數字依序接著唸。 */
+ * 語音：預先錄好的音檔（audio/m_*.mp3、audio/n_*.mp3＝0–1000 整數、audio/q_*.mp3），語速約 +15%。 */
 (function(){
 'use strict';
 var API=null; // {S,save,h,hud,playAudio,toast,esc,starStr,back}
@@ -20,8 +20,8 @@ function cn(n){ // 0–1000 的國語讀法
   if(n<100)return CN[Math.floor(n/10)]+'十'+(n%10?CN[n%10]:'');
   var h=Math.floor(n/100),r=n%100;var s=(h===2?'兩':CN[h])+'百';
   if(!r)return s;if(r<10)return s+'零'+CN[r];if(r<20)return s+'一十'+(r%10?CN[r%10]:'');return s+cn(r);}
-function numIds(n){
-  if(n<=100||n===1000)return ['n_'+n];
+function numIds(n){ // 0–1000 每個數都有整段錄音（不再拼接，聽起來較順）
+  if(n<=1000)return ['n_'+n];
   var h=Math.floor(n/100),r=n%100,out=['h_'+h];
   if(!r)return out;if(r<10)out.push('z_'+r);else if(r<20)out.push('t_'+r);else out.push('n_'+r);return out;}
 var TXT={m_plus:'加',m_minus:'減',m_eq:'等於',m_eqq:'等於多少？',m_gen:'跟',m_heq10:'跟幾合起來是十？',m_zaijia:'再加',m_jiushi:'就是',m_ba:'把',m_chaicheng:'拆成',m_cou10:'湊成十！',m_heqilai:'合起來是',
@@ -31,7 +31,7 @@ function wordsOf(ids){return ids.map(function(i){if(TXT[i])return TXT[i];var m=/
 var seqTok=0;
 function say(ids,onend){ // 依序播放多段音檔
   ids=ids.filter(Boolean);var my=++seqTok,i=0;
-  (function next(){if(my!==seqTok)return;if(i>=ids.length){if(onend)onend();return;}var id=ids[i++];API.playAudio(id,wordsOf([id]),function(){if(my===seqTok)setTimeout(next,40);});})();}
+  (function next(){if(my!==seqTok)return;if(i>=ids.length){if(onend)onend();return;}var id=ids[i++];API.playAudio(id,wordsOf([id]),function(){if(my===seqTok)setTimeout(next,10);});})();}
 function stopSay(){seqTok++;}
 function sayQ(a,op,b){ // 題目：20 以內有整句錄音（語調自然），其他用數字接著唸
   if((op==='+'&&a<=10&&b<=10)||(op==='-'&&a<=19&&b<=10&&b<=a))return say(['q_'+(op==='+'?'a':'s')+'_'+a+'_'+b]);

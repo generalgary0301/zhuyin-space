@@ -101,7 +101,7 @@ function speakTTS(text){
   try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='zh-TW';if(voice)u.voice=voice;u.rate=0.8*(S.settings.speed||1);u.pitch=1.05;speechSynthesis.speak(u);}catch(e){}
 }
 var AUD=new Audio();AUD.preload='auto';var audioStats={ok:0,fail:0,last:''};var playSeq=0;
-function audioSrc(id){return (window.ZY_AUDIO&&window.ZY_AUDIO[id])||('audio/'+id+'.mp3');}
+function audioSrc(id){return (window.ZY_AUDIO&&window.ZY_AUDIO[id])||('audio/'+id+'.mp3'+(/^(n|h|t|z|q|m|r\d\d|rx|rq|rp)_/.test(id)?'?v=5':''));}
 function playAudio(id,fallbackText,onend){
   var my=++playSeq;var done=false;
   function fallback(){if(done||my!==playSeq)return;done=true;audioStats.fail++;audioStats.last='fallback:'+id;speakTTS(fallbackText);if(onend)setTimeout(onend,1200);}
