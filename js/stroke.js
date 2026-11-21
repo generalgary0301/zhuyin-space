@@ -95,7 +95,7 @@ function grid(){
   GROUPS.forEach(function(g){html+='<h2 class="zs-gh">'+g[0]+'</h2><div class="zs-grid">';
     g[1].forEach(function(c){var n=stars(c);html+='<button class="zs-tile'+(n===3?' done':'')+'" data-zs="'+c+'"><span class="zs-ch">'+c+'</span><span class="zs-st">'+API.starStr(n)+'</span><span class="zs-cnt">'+D[c].n+' 畫</span></button>';});
     html+='</div>';});
-  html+='<button class="btn ghost" id="zs-back">⬅ 回星圖</button>';
+  html+='<button class="btn ghost" id="zs-back">⬅ 回國語星系</button>';
   API.h(html);
   document.querySelectorAll('[data-zs]').forEach(function(b){b.onclick=function(){symbol(b.getAttribute('data-zs'));};});
   document.getElementById('zs-back').onclick=API.home;

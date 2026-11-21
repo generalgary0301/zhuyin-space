@@ -1,0 +1,107 @@
+/* ---------- 部首星系 ---------- */
+.rad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin:10px 0}
+.radbtn{position:relative;border:none;border-radius:18px;padding:10px 4px;background:rgba(255,255,255,.13);color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.35)}
+.radbtn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.radbtn .rbig{font-size:48px;font-weight:900;line-height:1.1}
+.radbtn .rn{font-size:15px;font-weight:700}
+.radbtn .rs{font-size:12px}
+.radbtn .badge{position:absolute;top:4px;right:6px;font-size:16px}
+.rhero{display:flex;align-items:center;justify-content:center;gap:18px}
+.rbig2{font-size:110px;font-weight:900;line-height:1;width:140px;height:140px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.22);border-radius:30px;box-shadow:inset -8px -8px 0 rgba(0,0,0,.15);animation:radpop .7s ease-out}
+@keyframes radpop{0%{transform:scale(.3) rotate(-20deg);opacity:0}70%{transform:scale(1.1) rotate(4deg)}100%{transform:none;opacity:1}}
+.rkey{font-size:18px;text-align:center;background:rgba(0,0,0,.18);border-radius:16px;padding:8px 12px}.rkey b{font-size:44px}
+.zyv{display:inline-block;font-size:15px;background:rgba(255,255,255,.18);border-radius:8px;padding:1px 6px;letter-spacing:1px;vertical-align:middle}
+.pic{display:flex;gap:12px;align-items:center}.pemo{font-size:56px}
+.mean{font-size:19px;margin:10px 0 0;background:rgba(255,209,102,.18);border-radius:14px;padding:8px 10px}
+.excards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.excard{border:none;border-radius:18px;background:rgba(255,255,255,.12);color:#fff;padding:10px 6px;min-height:150px}
+.excard .exc{font-size:34px;font-weight:900;height:48px;display:flex;align-items:center;justify-content:center;gap:2px}
+.excard .pa{color:#ffd166;display:inline-block;transition:transform .5s}
+.excard .pb{display:inline-block;transition:transform .5s}
+.excard .plus{font-size:20px;opacity:.7;transition:opacity .3s}
+.excard .exr{display:flex;align-items:center;justify-content:center;gap:6px;opacity:0;transform:scale(.4);transition:all .45s .35s}
+.excard .exch{font-size:50px;font-weight:900}
+.excard .exw{font-size:16px;opacity:.85;margin-top:2px}
+.excard.built .pa:not(.solo){transform:translateX(10px)}.excard.built .pb{transform:translateX(-10px)}.excard.built .plus{opacity:0}
+.excard.built .exr{opacity:1;transform:none}
+.q-word.rq{color:#ffd166}
+.radopts .opt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:96px}
+.radopts .rform{font-size:40px;font-weight:900;line-height:1.1}.radopts .rname{font-size:15px}
+.radopts .ochar{font-size:48px;font-weight:900;line-height:1.1}
+.radopts.mean .opt{font-size:17px}.radopts .oemo{font-size:34px}
+/* ---------- 太空基地 ---------- */
+.galaxy-btn{min-height:150px}
+.lesson{min-height:76px;text-align:left;padding:14px 16px;background:linear-gradient(135deg,#576574,#222f3e)}
+.lesson.starl,.starl{box-shadow:0 0 0 3px #ffd166,0 6px 0 rgba(0,0,0,.35)}
+.starc{border:2px solid #ffd166}
+.mtip{font-size:16px;line-height:1.7;background:rgba(255,209,102,.14)}
+/* ---------- 數學動畫 ---------- */
+.mtitle{text-align:center;font-weight:800;font-size:20px;margin:4px 0 6px}
+.mbox{position:relative;width:100%;background:#13183f;border-radius:20px;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.mstage .mi{position:absolute;transition:left .8s cubic-bezier(.5,1.6,.5,1),top .8s cubic-bezier(.5,1.6,.5,1),opacity .5s,transform .5s,background .4s,box-shadow .4s}
+.mi.frame{border:3px solid #ffd166;border-radius:8px;box-sizing:border-box;pointer-events:none;z-index:1}
+.mi.frame.glow{box-shadow:0 0 18px 4px #ffd166}
+.mi.frame.faint{opacity:.25}
+.mi.cell{border:1px dashed rgba(255,255,255,.25);box-sizing:border-box}
+.mi.cell.hole{background:rgba(255,209,102,.25);animation:blink 1s infinite alternate}
+@keyframes blink{to{background:rgba(255,209,102,.05)}}
+.mi.dot{border-radius:50%;aspect-ratio:1;z-index:2;box-shadow:inset -3px -3px 0 rgba(0,0,0,.25)}
+.mi.dot.red{background:#ff6b6b}.mi.dot.blue{background:#4dabf7}.mi.dot.yellow{background:#ffd43b}
+.mi.dot.ring{box-shadow:0 0 0 3px #fff,inset -3px -3px 0 rgba(0,0,0,.25)}
+.mi.gone{opacity:.12;transform:scale(.6)}
+.mi.pop{animation:pop .5s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:none}}
+.mi.splitlab span{position:absolute;top:0;font-weight:900;font-size:18px;color:#fff;background:rgba(0,0,0,.35);border-radius:10px;padding:0 8px;white-space:nowrap}
+.mi.splitlab .sl-a{color:#ffd166}.mi.splitlab .sl-b{color:#8fd3ff}
+.mi.flab{text-align:center;font-weight:900;font-size:20px;color:#ffd166}
+.mi.zone{border-radius:14px;background:rgba(255,255,255,.06);text-align:center;font-size:15px;padding-top:2px;box-sizing:border-box}
+.mi.zone.glow{background:rgba(100,227,155,.18)}
+.mi.rowlab{font-weight:900;font-size:18px;color:#fff}
+.mi.hline{background:rgba(255,255,255,.5)}
+.mi.rod{display:flex;flex-direction:column;background:#ff922b;border-radius:3px;box-shadow:inset -2px 0 0 rgba(0,0,0,.25);z-index:2}
+.mi.rod i{flex:1;border-bottom:1px solid rgba(0,0,0,.25)}
+.mi.rod.b{background:#4dabf7}
+.mi.rod.new{background:#51cf66}
+.mi.rod.hide,.mi.cube.hide{opacity:0}
+.mi.rod.carryfly{animation:carry .9s}
+@keyframes carry{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(-8deg);box-shadow:0 0 16px #51cf66}100%{transform:none}}
+.mi.rod.breaking{animation:shake .6s}
+@keyframes shake{25%{transform:rotate(8deg)}50%{transform:rotate(-8deg)}75%{transform:rotate(5deg)}}
+.mi.cube{aspect-ratio:1;background:#ff922b;border-radius:2px;box-shadow:inset -2px -2px 0 rgba(0,0,0,.25);z-index:3}
+.mi.cube.b{background:#4dabf7}.mi.cube.y{background:#51cf66}
+.mi.cube.bundle{background:#51cf66}
+.meq{text-align:center;font-size:24px;font-weight:800;margin:8px 0 2px;line-height:1.5}
+.meq div:last-child{color:#ffd166}
+.mcap{text-align:center;font-size:19px;min-height:52px;margin:4px 0;background:rgba(255,255,255,.08);border-radius:14px;padding:8px}
+.mctl{display:flex;gap:10px}.mctl .mbtn{margin:6px 0;font-size:19px;padding:12px}
+/* 直式 */
+.colbox{padding:12px 0}
+.colgrid{display:inline-grid;gap:2px;margin:0 auto;font-weight:900}
+.mbox .colgrid,#qshow .colgrid{display:grid;justify-content:center}
+.cg-row{display:flex;gap:4px;justify-content:center}
+.cg-row span{width:56px;height:56px;line-height:56px;text-align:center;font-size:42px;border-radius:10px;position:relative;transition:background .3s}
+.cg-row.hd span{height:26px;line-height:26px;font-size:16px;color:#aab}
+.cg-row.carry span{height:30px;line-height:30px;font-size:22px;color:#ff6b6b}
+.cg-row.carry span.small{color:#51cf66}
+.cg-row span.op{color:#ffd166}
+.cg-row.res span{color:#64e39b}
+.cg-line{height:4px;background:#fff;border-radius:2px;margin:2px 0}
+.cg-row span.hl{background:rgba(255,209,102,.25)}
+.cg-row span.strike{text-decoration:line-through;text-decoration-color:#ff6b6b;text-decoration-thickness:4px;opacity:.75}
+.cg-row span.pop{animation:pop .5s}
+.cg-row.carry span.fly{animation:fly .9s ease-out}
+@keyframes fly{0%{transform:translate(60px,120px) scale(1.6);opacity:.2}60%{opacity:1}100%{transform:none}}
+.colgrid.glow{filter:drop-shadow(0 0 10px #64e39b)}
+.colgrid.q .cg-row span{width:50px;height:54px;line-height:54px;font-size:40px}
+/* 題目與鍵盤 */
+.mq{text-align:center;font-size:46px;font-weight:900;margin:14px 0 6px;letter-spacing:2px}
+.ansbox{display:inline-block;min-width:76px;padding:0 10px;border-radius:14px;background:rgba(255,209,102,.22);color:#ffd166;border:3px dashed #ffd166}
+.askq{text-align:center;font-size:26px;font-weight:800;margin:10px 0 6px}
+.askq .ansbox{min-width:60px;font-size:28px}
+.npad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px;margin:8px auto}
+.nk{font-size:30px;font-weight:800;border:none;border-radius:16px;padding:12px 0;background:rgba(255,255,255,.16);color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.nk:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.nk.ok{background:#64e39b;color:#06331a}.nk.fn{background:rgba(255,107,129,.35)}
+@media (min-width:700px){main{max-width:720px}.npad{max-width:420px}}
+.planet .orb.wo{width:auto;display:inline-block;padding:0 16px;border-radius:36px;white-space:nowrap;font-size:30px}
+.mi.vanish{opacity:0!important}
