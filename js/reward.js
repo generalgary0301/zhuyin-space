@@ -4,7 +4,7 @@
 (function(){
 'use strict';
 var API=null,$=function(id){return document.getElementById(id);};
-var YT='https://www.youtube.com/results?search_query='+encodeURIComponent('哆啦A夢');
+var YT_SEARCH='https://www.youtube.com/results?search_query='+encodeURIComponent('哆啦A夢');
 var PER_KEY_DAY=2;
 function S(){return API.S();}
 function today(d){d=d?new Date(d):new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
@@ -95,6 +95,41 @@ function redeem(id){var x=rewards().filter(function(z){return z.id===id;})[0];if
     API.save();hudBank();sparkle();ticket(no);});}
 
 // ---------- 兌換券＋計時 ----------
+// 預設影片：Muse木棉花（台灣代理）官方頻道的國語版《新哆啦A夢》，已確認可嵌入播放、標示為闔家觀賞
+var DEF_VIDS=[
+ ['BI5qDyVqEjA','哆啦A夢 小單元01：太空探險・後山星'],
+ ['3jK-2NxExJY','哆啦A夢 小單元02：大雄的漫長離家出走'],
+ ['A9lwXGw7cc0','新哆啦A夢 第488話'],
+ ['RgZ7rxUaabc','新哆啦A夢 第487話'],
+ ['zX-qljK5fqk','新哆啦A夢 第486話'],
+ ['49e2jQDdiYE','新哆啦A夢 第485話'],
+ ['t4gUFlGBGjE','新哆啦A夢 第484話'],
+ ['yx_wVhEWdIs','新哆啦A夢 第483話'],
+ ['3KhM4ZuwgNY','新哆啦A夢 第482話'],
+ ['lUh77YJFqxk','新哆啦A夢 第481話'],
+ ['vPRknJAtXD8','新哆啦A夢 第480話'],
+ ['_2SHJMLFDnc','新哆啦A夢 第479話'],
+ ['xKj9v6tQTHQ','新哆啦A夢 第478話'],
+ ['GbdroceYdOk','新哆啦A夢 第477話'],
+ ['TXv9e0wLm-U','新哆啦A夢 第475話'],
+ ['6FJWOt8SjMk','新哆啦A夢 第471話'],
+ ['2jiI5lnnEPg','新哆啦A夢 第470話'],
+ ['7sQeFF1xQPQ','新哆啦A夢 第469話'],
+ ['NGk6bO64Gm0','新哆啦A夢 第468話'],
+ ['cO9j3q0kNCs','新哆啦A夢 第330話'],
+ ['G1aV8J6QSfI','新哆啦A夢 第320話'],
+ ['xeDmUlATQ2c','新哆啦A夢 第303話'],
+ ['L-kaAHODrII','新哆啦A夢 第285話'],
+ ['USezAUegm5Q','新哆啦A夢 第279話'],
+ ['Ma22cvEc51c','新哆啦A夢 第258話'],
+ ['o_8McH0tsfc','新哆啦A夢 第250話'],
+ ['ix-XHaZOlSw','新哆啦A夢 第249話'],
+ ['SlXHocexW2w','新哆啦A夢 第238話'],
+ ['Lss5eXjGexg','新哆啦A夢 第234話']
+].map(function(v){return {id:v[0],t:v[1]};});
+function V(){var r=R();if(!r.vids)r.vids=DEF_VIDS.slice();if(!r.vbad)r.vbad={};if(!r.vpos)r.vpos={i:0,t:0};return r;}
+function goodVids(){var r=V();return r.vids.filter(function(v){return !r.vbad[v.id];});}
+function parseVid(s){s=String(s||'').trim();var m=/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/.exec(s);if(m)return m[1];return /^[A-Za-z0-9_-]{11}$/.test(s)?s:null;}
 function findH(no){return R().hist.filter(function(h){return h.no===no;})[0];}
 function ticket(no){var h=findH(no);if(!h)return bank();var r=R();var tm=r.timer&&r.timer.hid===no?r.timer:null;
   var html='<div class="muted">🏦 星星存摺 › 🎟️ 兌換券</div>'+
@@ -102,38 +137,98 @@ function ticket(no){var h=findH(no);if(!h)return bank();var r=R();var tm=r.timer
    '<div class="rw-ticket-meta">律恩・'+fmt(h.t)+'・用了 ⭐ '+h.cost+'</div><div class="rw-ticket-ok">✅ 家長已確認</div></div>';
   if(!r.pinChanged)html+='<p class="feedback bad center" style="font-size:15px">⚠️ 家長密碼還是預設的 0000，請到「家長專區 › 星星存摺設定」改成自己的密碼</p>';
   if(h.min){
-    if(tm)html+='<div class="card center"><div class="muted">⏱️ 剩下時間</div><div class="rw-time" id="rw-time">'+mmss(remain(tm))+'</div><div class="progress"><i id="rw-tbar" style="width:'+(100-remain(tm)/tm.total*100)+'%"></i></div><p class="muted" id="rw-tstate">'+(tm.endAt?'計時中…時間到會響鈴提醒':'按「開始計時」再開始看喔')+'</p>'+
-      '<button class="btn gold" id="rw-start">'+(tm.endAt?'⏸ 暫停':'▶ 開始計時')+'</button><button class="btn ghost" id="rw-stop">⏹ 提早結束</button></div>';
+    if(tm){html+='<div class="card center"><div class="muted">⏱️ 剩下時間</div><div class="rw-time" id="rw-time">'+mmss(remain(tm))+'</div><div class="progress"><i id="rw-tbar" style="width:'+(100-remain(tm)/tm.total*100)+'%"></i></div>'+
+      '<p class="muted">'+(h.yt?'在放映室裡看才會開始計時；離開放映室就暫停。時間到會自動停止影片。':(tm.endAt?'計時中…':'按開始計時'))+'</p>'+
+      (h.yt?'<button class="btn gold" id="rw-theater">▶ '+(tm.used?'回到':'進入')+'哆啦A夢放映室</button>':'<button class="btn gold" id="rw-start">'+(tm.endAt?'⏸ 暫停':'▶ 開始計時')+'</button>')+
+      '<button class="btn ghost" id="rw-stop">⏹ 提早結束</button></div>';
+      if(h.yt)html+='<p class="center"><button class="rw-link" id="rw-ytapp">在 YouTube App 開啟（需家長密碼，不會有時間到提醒）</button></p>';}
     else html+='<div class="card center"><div style="font-size:30px">✅</div><b>這張兌換券的時間已經用完了</b></div>';
-    if(h.yt&&tm)html+='<a class="btn blue" id="rw-yt" href="'+YT+'" target="_blank" rel="noopener">📺 打開 YouTube 搜尋哆啦A夢</a><p class="muted center" style="font-size:14px">先按「開始計時」再打開 YouTube。看完記得回到這個頁面；手機或平板切到別的 App 時，鈴聲可能要回到這頁才會響。</p>';
   }
   html+='<button class="btn ghost" id="back">⬅ 回星星存摺</button>';
   API.h(html);$('back').onclick=bank;
+  if($('rw-theater'))$('rw-theater').onclick=function(){theater(no);};
+  if($('rw-ytapp'))$('rw-ytapp').onclick=function(){pinPad('用 YouTube App 看',function(){
+    if(!confirm('在 YouTube App 看的時候，這個網站沒辦法在時間到時提醒或停止影片。確定要開啟嗎？'))return;window.open(YT_SEARCH,'_blank','noopener');});};
   if($('rw-start'))$('rw-start').onclick=function(){var t=R().timer;if(!t)return;if(t.endAt){t.remain=Math.max(0,t.endAt-Date.now());t.endAt=null;}else{t.endAt=Date.now()+t.remain;}API.save();ticket(no);};
   if($('rw-stop'))$('rw-stop').onclick=function(){if(confirm('確定要提早結束嗎？'))finishTimer(false);};}
 function remain(t){return t.endAt?Math.max(0,t.endAt-Date.now()):t.remain;}
 function mmss(ms){var s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
-function finishTimer(ring){var r=R();var t=r.timer;if(!t)return;var h=findH(t.hid);if(h){h.done=true;h.end=new Date().toISOString();h.early=!ring;}r.timer=null;API.save();
-  var mt=$('rw-mini');if(mt)mt.remove();
-  if(ring){chime(3);var d=document.createElement('div');d.className='rw-pop';d.id='rw-end';
-    d.innerHTML='<div class="rw-pop-box"><div class="rw-burst">⏰</div><h1>時間到囉！</h1><p class="sub">'+esc(h?h.name:'')+' 結束了<br>讓眼睛休息一下，看看遠方 👀</p><button class="btn gold" id="rw-end-ok">知道了</button></div>';
-    document.body.appendChild(d);var again=setInterval(function(){if(!d.isConnected){clearInterval(again);return;}chime(1);},20000);
-    $('rw-end-ok').onclick=function(){clearInterval(again);d.remove();bank();};}
-  else bank();}
+function pauseTimer(){var t=R().timer;if(t&&t.endAt){t.remain=Math.max(0,t.endAt-Date.now());t.endAt=null;API.save();}}
+function resumeTimer(){var t=R().timer;if(t&&!t.endAt){t.endAt=Date.now()+t.remain;t.used=true;API.save();}}
+
+// ---------- 📺 放映室（YouTube IFrame Player API，計時器控制播放） ----------
+var player=null,ytReady=false,ytWait=[],TH=null;
+function loadYT(cb){if(ytReady&&window.YT&&window.YT.Player)return cb();ytWait.push(cb);
+  if(!document.getElementById('yt-api')){var s=document.createElement('script');s.id='yt-api';s.src='https://www.youtube.com/iframe_api';s.onerror=function(){var e=$('th-msg');if(e)e.textContent='連不上 YouTube，請確認網路';};document.head.appendChild(s);
+    var prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=function(){ytReady=true;if(prev)try{prev();}catch(e){}var q=ytWait;ytWait=[];q.forEach(function(f){f();});};}}
+function theater(no){var r=V();var t=r.timer;if(!t||t.hid!==no)return ticket(no);if(r.timeup)return showTimeup();
+  var vids=goodVids();
+  var d=document.createElement('div');d.id='rw-th';d.className='rw-th';
+  d.innerHTML='<div class="th-bar"><button class="th-btn" id="th-close">⏸ 休息一下</button><div class="th-title" id="th-title">哆啦A夢放映室</div><button class="th-btn" id="th-list">📋 選集</button><button class="th-btn" id="th-next">⏭</button><button class="th-btn" id="th-fs">⛶</button></div>'+
+    '<div class="th-stage"><div id="th-player"></div><div class="th-block tl"></div><div class="th-block br"></div><div class="th-time" id="th-time">⏱️ '+mmss(remain(t))+'</div><div class="th-msg" id="th-msg">載入中…</div></div><div class="th-listbox" id="th-listbox" hidden></div>';
+  document.body.appendChild(d);document.body.classList.add('th-open');TH={no:no,errs:0};
+  if(!vids.length){$('th-msg').textContent='影片清單是空的，請爸媽到家長專區加入影片';}
+  $('th-close').onclick=closeTheater;
+  $('th-next').onclick=function(){nextVid(1);};
+  $('th-fs').onclick=function(){var el=d;try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}else{(el.requestFullscreen||el.webkitRequestFullscreen).call(el);}}catch(e){API.toast('這台裝置不支援全螢幕，已用放大畫面');}};
+  $('th-list').onclick=function(){var lb=$('th-listbox');if(!lb.hidden){lb.hidden=true;return;}var vs=goodVids();
+    lb.innerHTML='<div class="th-list-h">選一集 <button class="th-btn" id="th-lclose">✖</button></div>'+vs.map(function(v,i){return '<button class="th-item'+(i===V().vpos.i?' on':'')+'" data-vi="'+i+'"><img src="https://i.ytimg.com/vi/'+v.id+'/mqdefault.jpg" alt=""><span>'+esc(v.t||v.id)+'</span></button>';}).join('');
+    lb.hidden=false;$('th-lclose').onclick=function(){lb.hidden=true;};
+    lb.querySelectorAll('[data-vi]').forEach(function(b){b.onclick=function(){lb.hidden=true;var r=V();r.vpos={i:+b.getAttribute('data-vi'),t:0};API.save();playCur();};});};
+  if(!vids.length)return;
+  loadYT(function(){if(!$('rw-th'))return;
+    var cur=curVid();
+    player=new YT.Player('th-player',{width:'100%',height:'100%',videoId:cur.id,host:'https://www.youtube.com',
+      playerVars:{playsinline:1,rel:0,fs:0,modestbranding:1,iv_load_policy:3,hl:'zh-TW',start:Math.floor(V().vpos.t||0),autoplay:1,origin:location.protocol==='file:'?undefined:location.origin},
+      events:{onReady:function(e){$('th-msg').textContent='';setTitle();try{e.target.playVideo();}catch(x){}resumeTimer();tick();},
+        onStateChange:function(e){if(e.data===1){$('th-msg').textContent='';TH.errs=0;resumeTimer();}if(e.data===0){var r=V();r.vpos={i:r.vpos.i+1,t:0};API.save();playCur();}},
+        onError:function(e){var c=curVid();var r=V();r.vbad[c.id]=e.data;API.save();TH.errs++;
+          $('th-msg').textContent='這一集不能在這裡播放（代碼 '+e.data+'），自動換下一集…';
+          if(TH.errs>Math.max(3,goodVids().length+1)){$('th-msg').textContent='影片都不能播放，請爸媽到家長專區檢查影片清單';return;}
+          setTimeout(function(){var r=V();if(r.vpos.i>=goodVids().length)r.vpos.i=0;r.vpos.t=0;API.save();playCur();},1500);}}});});}
+function curVid(){var vs=goodVids();var r=V();if(!vs.length)return {id:'',t:''};if(r.vpos.i>=vs.length||r.vpos.i<0)r.vpos.i=0;return vs[r.vpos.i];}
+function setTitle(){var e=$('th-title');if(e)e.textContent='📺 '+(curVid().t||'哆啦A夢');}
+function playCur(){var c=curVid();if(!player||!c.id)return;setTitle();try{player.loadVideoById({videoId:c.id,startSeconds:Math.floor(V().vpos.t||0)});}catch(e){}}
+function nextVid(k){var r=V();r.vpos={i:(r.vpos.i+k)%Math.max(1,goodVids().length),t:0};API.save();playCur();}
+function savePos(){try{if(player&&player.getCurrentTime){var r=V();r.vpos.t=Math.max(0,player.getCurrentTime()-3);API.save();}}catch(e){}}
+function exitFS(){try{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(e){}}
+function destroyTheater(){savePos();try{if(player){player.stopVideo&&player.stopVideo();player.destroy();}}catch(e){}player=null;exitFS();var d=$('rw-th');if(d)d.remove();document.body.classList.remove('th-open');var no=TH&&TH.no;TH=null;return no;}
+function closeTheater(){pauseTimer();var no=destroyTheater();if(no)ticket(no);}
+
+// ---------- 時間到：停止影片、全螢幕遮罩、要家長密碼才能關 ----------
+function finishTimer(ring){var r=R();var t=r.timer;if(!t)return;var h=findH(t.hid);
+  if(ring){try{if(player&&player.pauseVideo)player.pauseVideo();}catch(e){}savePos();exitFS();
+    if(h){h.done=true;h.end=new Date().toISOString();h.early=false;}r.timer=null;r.timeup={hid:t.hid,name:h?h.name:'',at:Date.now()};API.save();
+    destroyTheater();var mt=$('rw-mini');if(mt)mt.remove();showTimeup();return;}
+  if(h){h.done=true;h.end=new Date().toISOString();h.early=true;}r.timer=null;API.save();destroyTheater();var mt2=$('rw-mini');if(mt2)mt2.remove();bank();}
+var tuRing=null;
+function showTimeup(){var r=R();var tu=r.timeup;if(!tu||$('rw-end'))return;
+  var d=document.createElement('div');d.className='rw-pop rw-timeup';d.id='rw-end';
+  d.innerHTML='<div class="rw-pop-box"><div class="rw-burst">⏰</div><h1>時間到囉！</h1><p class="sub">'+esc(tu.name)+' 結束了<br>讓眼睛休息一下，看看遠方 👀</p><p class="muted">請爸爸或媽媽輸入家長密碼</p><button class="btn gold" id="rw-end-ok">🔒 家長密碼</button></div>';
+  document.body.appendChild(d);chime(3);clearInterval(tuRing);tuRing=setInterval(function(){if(!d.isConnected){clearInterval(tuRing);return;}chime(1);},20000);
+  $('rw-end-ok').onclick=function(){pinPad('時間到・家長確認',function(){var box=d.querySelector('.rw-pop-box');
+    box.innerHTML='<div class="rw-burst">👍</div><h2>家長已確認</h2><button class="btn gold" id="rw-tu-end">✅ 結束，去休息</button><button class="btn blue" id="rw-tu-more">➕ 再看 5 分鐘（不扣星星）</button>';
+    $('rw-tu-end').onclick=function(){clearInterval(tuRing);var r=R();r.timeup=null;API.save();d.remove();bank();};
+    $('rw-tu-more').onclick=function(){clearInterval(tuRing);var r=R();var hid=r.timeup.hid;r.timeup=null;var h=findH(hid);if(h){h.done=false;h.ext=(h.ext||0)+5;}
+      r.timer={hid:hid,total:5*60000,remain:5*60000,endAt:null,warned:true,used:true};API.save();d.remove();theater(hid);};});};}
 function timerBanner(){var t=R().timer;if(!t)return '';var h=findH(t.hid);
-  return '<button class="card rw-banner" data-rw-ticket="'+t.hid+'">⏱️ '+(h?esc(h.name):'計時')+'：<b class="rw-tleft">'+mmss(remain(t))+'</b> '+(t.endAt?'計時中':'（還沒開始）')+' ›</button>';}
+  return '<button class="card rw-banner" data-rw-ticket="'+t.hid+'">⏱️ '+(h?esc(h.name):'計時')+'：<b class="rw-tleft">'+mmss(remain(t))+'</b> '+(t.endAt?'計時中':'（暫停中）')+' ›</button>';}
 function bindBanner(){document.querySelectorAll('[data-rw-ticket]').forEach(function(b){b.onclick=function(){ticket(+b.getAttribute('data-rw-ticket'));};});}
-function tick(){var r;try{r=R();}catch(e){return;}var t=r.timer;
+function tick(){var r;try{r=R();}catch(e){return;}if(r.timeup&&!$('rw-end'))showTimeup();var t=r.timer;
   var mini=$('rw-mini');
   if(!t||!t.endAt){if(mini)mini.remove();if(t&&$('rw-time'))$('rw-time').textContent=mmss(t.remain);return;}
   var ms=remain(t);
   var e=$('rw-time');if(e){e.textContent=mmss(ms);var b=$('rw-tbar');if(b)b.style.width=(100-ms/t.total*100)+'%';}
+  var tt=$('th-time');if(tt){tt.textContent='⏱️ '+mmss(ms);tt.classList.toggle('warn',ms<=60000);}
   document.querySelectorAll('.rw-tleft').forEach(function(x){x.textContent=mmss(ms);});
-  if(!e){if(!mini){mini=document.createElement('button');mini.id='rw-mini';mini.className='rw-mini';mini.onclick=function(){ticket(R().timer.hid);};document.body.appendChild(mini);}mini.textContent='⏱️ '+mmss(ms);}
+  if(!e&&!tt){if(!mini){mini=document.createElement('button');mini.id='rw-mini';mini.className='rw-mini';mini.onclick=function(){ticket(R().timer.hid);};document.body.appendChild(mini);}mini.textContent='⏱️ '+mmss(ms);}
   else if(mini)mini.remove();
   if(ms<=60000&&!t.warned&&t.total>60000){t.warned=true;API.save();chime(1);API.toast('⏰ 還剩 1 分鐘');}
-  if(ms<=0)finishTimer(true);}
-setInterval(tick,1000);document.addEventListener('visibilitychange',function(){if(!document.hidden)tick();});
+  if(ms<=0)finishTimer(true);
+  else if(!tt&&findH(t.hid)&&findH(t.hid).yt){pauseTimer();} // 影片獎勵：不在放映室就不計時
+}
+setInterval(tick,1000);document.addEventListener('visibilitychange',function(){if(!document.hidden)tick();else savePos();});
+window.addEventListener('pagehide',savePos);
 
 // ---------- 首頁卡片 ----------
 function homeCard(){var r=R();
@@ -154,11 +249,17 @@ function parentsCard(){var r=R();var unlocked=Date.now()<unlockUntil;
     '<h3>🎁 其他獎勵</h3><div id="rw-alts">'+r.alts.map(function(a,i){return '<div class="rw-alt" data-i="'+i+'"><input class="emo" value="'+esc(a.emoji||'🎁')+'" maxlength="4"><input class="nm" value="'+esc(a.name)+'" maxlength="30"><input class="ct" type="number" min="1" max="50" value="'+(a.cost||r.cost)+'"><span>⭐</span><button class="mini" data-del="'+i+'">🗑</button></div>';}).join('')+'</div>'+
     '<button class="btn ghost" id="rw-add">➕ 新增獎勵</button><button class="btn gold" id="rw-save">💾 儲存設定</button>'+
     '<h3>🔑 更改家長密碼</h3><label>新密碼（4 位數字） <input type="password" inputmode="numeric" maxlength="4" id="rw-p1"></label><label>再輸入一次 <input type="password" inputmode="numeric" maxlength="4" id="rw-p2"></label><button class="btn" id="rw-pin">更改密碼</button>'+
+    vidsHTML()+
     '<h3>🛠️ 手動調整星星</h3><div class="rw-adj"><button class="mini" data-adj="-1">－1</button><button class="mini" data-adj="1">＋1</button></div></div>';}
   html+='<h3 style="margin:12px 0 4px">🎟️ 兌換紀錄</h3>'+(r.hist.length?'<ul class="list">'+r.hist.slice().reverse().slice(0,20).map(function(h){return '<li><div>'+h.emoji+' '+esc(h.name)+'<div class="muted">'+fmt(h.t)+'・No.'+('000'+h.no).slice(-4)+(h.min?(h.done?(h.early?'・提早結束':'・時間到'):'・計時中/未開始'):'')+'</div></div><b>－'+h.cost+' ⭐</b></li>';}).join('')+'</ul>':'<p class="muted">還沒有兌換紀錄</p>');
   var lg=r.log.slice(-10).reverse();
   html+='<h3 style="margin:12px 0 4px">📒 最近存入</h3>'+(lg.length?'<ul class="list">'+lg.map(function(l){return '<li><div>'+esc(l.src)+'・'+esc(l.title)+'<div class="muted">'+fmt(l.t)+'</div></div><b>+'+l.n+'</b></li>';}).join('')+'</ul>':'<p class="muted">還沒有存入紀錄</p>');
   return html+'</div>';}
+function vidsHTML(){var r=V();
+  return '<h3>📺 哆啦A夢影片清單（在網站裡播放）</h3><p class="muted" style="font-size:14px">預設是 Muse木棉花 官方頻道的國語版《新哆啦A夢》。可以貼上 YouTube 網址或影片 ID 新增；不能嵌入播放的影片會自動跳過並標示 ⚠️。</p>'+
+   '<div id="rw-vids">'+r.vids.map(function(v,i){return '<div class="rw-vid"><img src="https://i.ytimg.com/vi/'+v.id+'/default.jpg" alt=""><div class="rw-vid-t">'+esc(v.t||v.id)+'<div class="muted">'+v.id+(r.vbad[v.id]?' ⚠️ 無法嵌入（'+r.vbad[v.id]+'）':'')+'</div></div><button class="mini" data-vdel="'+i+'">🗑</button></div>';}).join('')+'</div>'+
+   '<div class="rw-vadd"><input id="rw-vurl" placeholder="貼上 YouTube 網址或影片 ID"><button class="mini" id="rw-vaddb">➕ 加入</button></div>'+
+   '<div class="rw-adj"><button class="mini" id="rw-vclr">清除 ⚠️ 標記</button><button class="mini" id="rw-vdef">恢復預設清單</button></div>';}
 function rerender(){var c=$('rw-parents');if(!c)return;var d=document.createElement('div');d.innerHTML=parentsCard();c.replaceWith(d.firstChild);bindParents();}
 function bindParents(){var r=R();
   var u=$('rw-unlock');if(u)u.onclick=function(){pinPad('修改星星存摺設定',function(){unlockUntil=Date.now()+10*60000;rerender();});};
@@ -169,7 +270,13 @@ function bindParents(){var r=R();
   var ad=$('rw-add');if(ad)ad.onclick=function(){var w=$('rw-alts');var d=document.createElement('div');d.className='rw-alt';d.innerHTML='<input class="emo" value="🎁" maxlength="4"><input class="nm" placeholder="獎勵名稱" maxlength="30"><input class="ct" type="number" min="1" max="50" value="'+r.cost+'"><span>⭐</span><button class="mini" data-del="x">🗑</button>';w.appendChild(d);d.querySelector('[data-del]').onclick=function(){d.remove();};d.querySelector('.nm').focus();};
   document.querySelectorAll('#rw-alts [data-del]').forEach(function(b){b.onclick=function(){b.parentNode.remove();};});
   var pn=$('rw-pin');if(pn)pn.onclick=function(){var a=$('rw-p1').value,b=$('rw-p2').value;if(!/^\d{4}$/.test(a)){API.toast('請輸入 4 位數字');return;}if(a!==b){API.toast('兩次輸入不一樣');return;}r.pin=a;r.pinChanged=true;API.save();API.toast('🔑 密碼已更改');rerender();};
+  document.querySelectorAll('[data-vdel]').forEach(function(b){b.onclick=function(){var r=V();r.vids.splice(+b.getAttribute('data-vdel'),1);r.vpos={i:0,t:0};API.save();rerender();};});
+  var va=$('rw-vaddb');if(va)va.onclick=function(){var id=parseVid($('rw-vurl').value);if(!id){API.toast('看不懂這個網址，請貼 YouTube 影片網址');return;}var r=V();if(r.vids.some(function(v){return v.id===id;})){API.toast('清單裡已經有了');return;}
+    var add=function(t){r.vids.push({id:id,t:t||id});delete r.vbad[id];API.save();rerender();API.toast('✅ 已加入');};
+    fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+id)).then(function(x){if(x.status===401||x.status===403){r.vbad[id]='不允許嵌入';}return x.ok?x.json():null;}).then(function(j){add(j&&j.title?j.title.replace(/｜.*$/,'').replace(/^【國語】/,''):id);}).catch(function(){add(id);});};
+  var vc=$('rw-vclr');if(vc)vc.onclick=function(){V().vbad={};API.save();rerender();};
+  var vd=$('rw-vdef');if(vd)vd.onclick=function(){if(!confirm('恢復成預設的影片清單？'))return;var r=V();r.vids=DEF_VIDS.slice();r.vbad={};r.vpos={i:0,t:0};API.save();rerender();};
   document.querySelectorAll('[data-adj]').forEach(function(b){b.onclick=function(){r.bal=Math.max(0,r.bal+parseInt(b.getAttribute('data-adj'),10));API.save();hudBank();rerender();};});}
 
-window.ZYReward={init:function(api){API=api;R();hudBank();setTimeout(tick,500);},earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
+window.ZYReward={init:function(api){API=api;V();hudBank();setTimeout(tick,500);},theater:theater,_p:function(){return player;},_vids:goodVids,earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
 })();
