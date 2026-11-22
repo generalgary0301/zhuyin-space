@@ -11,7 +11,7 @@ function R(){var s=API.S();if(!s.rad)s.rad={learn:{},quiz:{},stats:{},tests:[]};
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function rnd(a){return a[Math.floor(Math.random()*a.length)];}
 function esc(s){return API.esc(s);}
-function chain(ids,texts){var i=0;(function next(){if(i>=ids.length)return;var k=i++;API.playAudio(ids[k],texts[k],function(){setTimeout(next,120);});})();}
+function chain(ids,texts,onend){var i=0;(function next(){if(i>=ids.length){if(onend)onend();return;}var k=i++;API.playAudio(ids[k],texts[k],function(){setTimeout(next,120);});})();}
 function sayEx(e){API.playAudio(e.aud,e.w);}
 function sayName(r){API.playAudio(r.an,r.name);}
 function radsOf(g){return D.rads.filter(function(r){return r.g===g;});}
@@ -19,24 +19,32 @@ function grp(g){return D.groups.filter(function(x){return x.id===g;})[0];}
 function rLabel(r){return '<span class="rform">'+esc(r.form)+'</span><span class="rname">'+esc(r.name)+'</span>';}
 function zyV(z){return '<span class="zyv">'+esc(z)+'</span>';}
 
-// ---------- 首頁 ----------
+// ---------- 首頁（由下往上的闖關地圖） ----------
+function rk(id){return 'rad:r:'+id;}function gk(g){return 'rad:g:'+g;}
+function groupDone(g){return radsOf(g).every(function(r){return window.ZYP.done(rk(r.id));})&&window.ZYP.done(gk(g));}
+function runPlain(key){var x=window.ZYP.peek(key);return (x.stars?'🌟×'+x.stars+'・':'')+'闖關 '+x.runs+'/3';}
+function count(){var n=0,t=0;D.groups.forEach(function(g){radsOf(g.id).forEach(function(r){t++;if(window.ZYP.done(rk(r.id)))n++;});t++;if(window.ZYP.done(gk(g.id)))n++;});return [n,t];}
 function hub(){API.hud();var x=R();
-  var html='<div class="ship">📚</div><h1>部首星系</h1><p class="sub">認識字的「家族」，看到部首就猜得出意思！</p>';
-  html+='<div class="card"><b>🤔 什麼是部首？</b><p style="margin:6px 0 0">很多字是由兩個部分組成的。像「河」有「氵」，「海」也有「氵」，它們都和<b>水</b>有關係。「氵」就是它們的<b>部首</b>，是字的家族名字。查字典的時候，也會用到部首喔！</p></div><div class="planet-grid">';
-  D.groups.forEach(function(g){var rs=radsOf(g.id);var learned=rs.filter(function(r){return x.learn[r.id];}).length;
-    html+='<button class="planet" data-g="'+g.id+'" style="background:'+g.color+'">'+((x.quiz['g:'+g.id]||0)>0?'<span class="badge">🏅</span>':'')+'<div class="orb wo">'+rs.slice(0,3).map(function(r){return esc(r.form);}).join('')+'</div><div class="pname">'+esc(g.name)+'</div><div class="pstars" style="font-size:12px">'+esc(g.desc)+'</div><div class="pstars" style="font-size:12px">學過 '+learned+' / '+rs.length+' 個部首・'+API.starStr(x.quiz['g:'+g.id]||0)+'</div></button>';});
-  html+='<button class="planet boss wide" id="go-rtest">🏆 部首大考驗<div class="pstars" style="font-size:15px">'+D.rads.length+' 個部首、'+Object.keys(CH).length+' 個字裡抽 20 題</div></button></div>';
+  var html='<div class="muted">📖 國語星系</div><div class="ship">📚</div><h1>部首星系</h1><p class="sub">認識字的「家族」，看到部首就猜得出意思！</p>';
+  html+='<div class="card"><b>🤔 什麼是部首？</b><p style="margin:6px 0 0">很多字是由兩個部分組成的。像「河」有「氵」，「海」也有「氵」，它們都和<b>水</b>有關係。「氵」就是它們的<b>部首</b>，是字的家族名字。查字典的時候，也會用到部首喔！</p></div>';
+  html+=window.ZYP.ruleHTML();
+  var items=D.groups.map(function(g){var rs=radsOf(g.id);var nd=rs.filter(function(r){return window.ZYP.done(rk(r.id));}).length;
+    return {g:g.id,done:groupDone(g.id),icon:'<b class="zs-mapch">'+rs.slice(0,2).map(function(r){return esc(r.form);}).join('')+'</b>',title:esc(g.name),sub:esc(g.desc)+'・部首 '+nd+'/'+rs.length+(window.ZYP.done(gk(g.id))?'・挑戰 ✅':''),color:g.color};});
+  items.push({test:1,done:window.ZYP.done('rad:test'),icon:'🏆',title:'部首大考驗',sub:'全部部首抽 20 題・'+runPlain('rad:test'),color:'linear-gradient(135deg,#2d3436,#6c5ce7)'});
+  var mp=window.ZYP.mapHTML(items);html+=mp.html;
   html+='<button class="btn ghost" id="back">⬅ 回國語星系</button>';
   API.h(html);
-  document.querySelectorAll('[data-g]').forEach(function(b){b.onclick=function(){group(b.getAttribute('data-g'));};});
-  $('go-rtest').onclick=function(){startQuiz(D.rads,20,'🏆 部首大考驗','test',hub);};$('back').onclick=API.back;}
+  window.ZYP.bindMap(document,items,mp.sts,function(it){if(it.test)startQuiz(D.rads,20,'🏆 部首大考驗','test',hub);else group(it.g);});
+  $('back').onclick=API.back;}
 function group(g){var G=grp(g);var x=R();var rs=radsOf(g);
-  var html='<div class="card" style="background:'+G.color+'"><h2 class="center">'+esc(G.name)+'</h2><p class="center" style="margin:0">'+esc(G.desc)+'</p></div><div class="rad-grid">';
-  rs.forEach(function(r){var st=x.quiz['r:'+r.id]||0;html+='<button class="radbtn" data-r="'+r.id+'">'+(x.learn[r.id]?'<span class="badge">✔</span>':'')+'<div class="rbig">'+esc(r.form)+'</div><div class="rn">'+esc(r.name)+'</div><div class="rs">'+API.starStr(st)+'</div></button>';});
-  html+='</div><button class="btn" id="gq">🚀 '+esc(G.name.replace(/^\S+\s/,''))+'挑戰（10 題）</button><button class="btn ghost" id="back">⬅ 回部首星系</button>';
+  var html='<div class="muted">📚 部首星系</div><div class="card" style="background:'+G.color+'"><h2 class="center">'+esc(G.name)+'</h2><p class="center" style="margin:0">'+esc(G.desc)+'</p></div>';
+  html+='<p class="muted center" style="margin:4px 0">每個部首：先看教學，再做小考（5 題），過關 3 次拿 1 顆星；全部部首都過了，就能挑戰最上面的「'+esc(G.name.replace(/^\S+\s/,''))+'挑戰」</p>';
+  var items=rs.map(function(r){return {r:r.id,done:window.ZYP.done(rk(r.id)),icon:'<b class="zs-mapch">'+esc(r.form)+'</b>',title:esc(r.name)+(x.learn[r.id]?' <span class="muted">（看過教學 ✔）</span>':''),sub:'小考 5 題・'+runPlain(rk(r.id)),color:G.color};});
+  items.push({gq:1,done:window.ZYP.done(gk(g)),icon:'🚀',title:esc(G.name.replace(/^\S+\s/,''))+'挑戰',sub:'10 題・'+runPlain(gk(g)),color:G.color});
+  var mp=window.ZYP.mapHTML(items);html+=mp.html+'<button class="btn ghost" id="back">⬅ 回部首星系</button>';
   API.h(html);
-  document.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){lesson(b.getAttribute('data-r'));};});
-  $('gq').onclick=function(){startQuiz(rs,10,G.name+' 挑戰','g:'+g,function(){group(g);});};$('back').onclick=hub;}
+  window.ZYP.bindMap(document,items,mp.sts,function(it){if(it.gq)startQuiz(rs,10,G.name+' 挑戰','g:'+g,function(){group(g);});else lesson(it.r);});
+  $('back').onclick=hub;}
 
 // ---------- 部首教學 ----------
 function lesson(id){var r=RBY[id];var x=R();x.learn[id]=1;API.save();
@@ -47,7 +55,7 @@ function lesson(id){var r=RBY[id];var x=R();x.learn[id]=1;API.save();
   html+='<div class="card"><div class="pic"><span class="pemo">'+r.emoji+'</span><div><b>'+esc(r.key)+' 的故事</b><p style="margin:4px 0 0">'+esc(r.pic)+'</p></div></div><p class="mean">👉 有「'+esc(r.form)+'」的字，大多<b>'+esc(r.mean)+'</b></p></div>';
   html+='<div class="card"><h2 style="margin-top:0">🧩 部首拼拼樂</h2><p class="muted" style="margin:0 0 8px">點一下卡片，看字是怎麼拼起來的，也會唸給你聽</p><div class="excards">';
   r.ex.forEach(function(e,i){html+='<button class="excard" data-i="'+i+'"><div class="exc">'+(e.parts?'<span class="pa">'+esc(e.parts[0])+'</span><span class="plus">＋</span><span class="pb">'+esc(e.parts[1])+'</span>':'<span class="pa solo">'+esc(e.c)+'</span>')+'</div><div class="exr"><span class="exch">'+esc(e.c)+'</span>'+zyV(e.z)+'</div><div class="exw">'+esc(e.w)+'</div></button>';});
-  html+='</div></div><button class="btn" id="rq">✏️ 小考 5 題</button><button class="btn ghost" id="back">⬅ 回'+esc(G.name)+'</button>';
+  html+='</div></div><div class="center">'+window.ZYP.runStr(rk(id),true)+window.ZYP.badgeStr(rk(id))+'</div><button class="btn" id="rq">✏️ 小考 5 題（闖關）</button><button class="btn ghost" id="back">⬅ 回'+esc(G.name)+'</button>';
   API.h(html);
   $('say-n').onclick=function(){sayName(r);};$('say-r').onclick=function(){API.playAudio(r.ar,r.key);};
   document.querySelectorAll('.excard').forEach(function(b){b.onclick=function(){var e=r.ex[+b.getAttribute('data-i')];b.classList.remove('built');void b.offsetWidth;b.classList.add('built');sayEx(e);};});
@@ -74,45 +82,54 @@ function qOdd(r,pool){var two=shuffle(r.ex).slice(0,2);
   if(!cand.length)return qFind(r,pool);var odd=cand[0];
   return {type:'odd',r:r,e:odd,prompt:'哪一個字的部首和別人<b>不一樣</b>？',pa:'rq_odd',answer:odd.c,explain:two[0].c+'、'+two[1].c+' 的部首是「'+r.form+'」'+r.name+'；'+odd.c+' 的部首是「'+odd.r.form+'」'+odd.r.name,
     opts:shuffle(two.concat([odd])).map(function(o){return {id:o.c,html:'<span class="ochar">'+esc(o.c)+'</span>'+zyV(o.z)};})};}
-function buildQuiz(rads,n){var pool=[];D.rads.forEach(function(r){pool=pool.concat(r.ex);});
-  var qs=[],used={};var order=[];while(order.length<n)order=order.concat(shuffle(rads));order=order.slice(0,n);
+function sigOf(q){if(q.type==='pick')return 'p:'+q.e.c;if(q.type==='find')return 'f:'+q.answer;if(q.type==='mean')return 'm:'+q.r.id;return 'o:'+q.opts.map(function(o){return o.id;}).sort().join('');}
+function makeOne(t,r,pool,used){var q;if(t==='pick'){var es=shuffle(r.ex.filter(function(e){return !used['p:'+e.c];}));var e=es[0]||rnd(r.ex);q=qPick(e);}
+  else if(t==='find'){var fs=shuffle(r.ex.filter(function(e){return !used['f:'+e.c];}));q=qFind(r,pool);if(fs.length&&used[sigOf(q)]){var e2=fs[0];var others=shuffle(pool.filter(function(x){return x.r!==r&&x.contains.indexOf(r.key)<0;})).slice(0,2);q.e=e2;q.answer=e2.c;q.opts=shuffle([e2].concat(others)).map(function(o){return {id:o.c,html:'<span class="ochar">'+esc(o.c)+'</span>'+zyV(o.z)};});}}
+  else if(t==='mean')q=qMean(r);else q=qOdd(r,pool);
+  q.sig=sigOf(q);return q;}
+function buildQuiz(rads,n,avoid){var pool=[];D.rads.forEach(function(r){pool=pool.concat(r.ex);});avoid=avoid||{};
+  var qs=[],used={};for(var k in avoid)used[k]=1;var order=[];while(order.length<n)order=order.concat(shuffle(rads));order=order.slice(0,n);
   var types=['pick','find','pick','mean','odd'];
-  order.forEach(function(r,i){var t=types[i%types.length];if(rads.length===1&&t==='mean'&&i>2)t='pick';
-    var q;if(t==='pick'){var es=shuffle(r.ex.filter(function(e){return !used[e.c];}));var e=es[0]||rnd(r.ex);used[e.c]=1;q=qPick(e);}
-    else if(t==='find')q=qFind(r,pool);else if(t==='mean')q=qMean(r);else q=qOdd(r,pool);
-    qs.push(q);});
+  order.forEach(function(r,i){var t0=types[i%types.length];if(rads.length===1&&t0==='mean'&&i>2)t0='pick';
+    var tries=[t0].concat(shuffle(['pick','find','odd','mean'].filter(function(t){return t!==t0;})));var q=null;
+    for(var a=0;a<tries.length*6&&!q;a++){var c=makeOne(tries[Math.floor(a/6)],r,pool,used);if(!used[c.sig])q=c;}
+    if(!q)q=makeOne(t0,r,pool,used); // 題目真的用完了才重複
+    used[q.sig]=1;qs.push(q);});
   return shuffle(qs);}
 var quiz=null;
-function startQuiz(rads,n,title,key,back){quiz={qs:buildQuiz(rads,n),idx:0,first:0,title:title,key:key,back:back,wrong:[]};showQ();}
+function startQuiz(rads,n,title,key,back){var lk='rad:'+key;var qs=buildQuiz(rads,n,window.ZYP.used(lk));quiz={qs:qs,idx:0,first:0,title:title,key:key,lk:lk,back:back,wrong:[],sigs:qs.map(function(q){return q.sig;})};showQ();}
 function showQ(){var q=quiz.qs[quiz.idx];var total=quiz.qs.length;
-  var html='<div class="muted">'+esc(quiz.title)+'</div><div class="progress"><i style="width:'+(quiz.idx/total*100)+'%"></i></div>'+(q.retried?'<p class="center"><span class="retry-tag">🔁 剛剛錯的，再試一次</span></p>':'')+'<p class="q-prompt">'+(q.type==='odd'?q.prompt:esc(q.prompt))+'</p>';
+  var html='<div class="muted">'+esc(quiz.title)+'</div><div class="progress"><i style="width:'+(quiz.idx/total*100)+'%"></i></div><div id="qtimer"></div>'+(q.retried?'<p class="center"><span class="retry-tag">🔁 剛剛錯的，再試一次</span></p>':'')+'<p class="q-prompt">'+(q.type==='odd'?q.prompt:esc(q.prompt))+'</p>';
   if(q.type==='pick')html+='<div class="q-word">'+esc(q.e.c)+'</div><p class="center" style="margin:0">'+zyV(q.e.z)+'　<span class="muted">'+esc(q.e.w)+'</span></p><button class="speak" id="say">🔊 聽一聽</button>';
   else if(q.type==='find'||q.type==='mean')html+='<div class="q-word rq">'+esc(q.r.form)+'</div><button class="speak" id="say">🔊 '+esc(q.r.name)+'</button>';
   else html+='<div style="height:6px"></div>';
   html+='<div class="opts '+(q.opts.length===3?'three':'two')+' radopts '+q.type+'">'+q.opts.map(function(o,k){return '<button class="opt small" data-k="'+k+'">'+o.html+'</button>';}).join('')+'</div><div class="feedback" id="fb"></div><div id="next-wrap"></div>';
   API.h(html);
   var sb=$('say');if(sb)sb.onclick=function(){if(q.type==='pick')sayEx(q.e);else sayName(q.r);};
-  setTimeout(function(){if(q.type==='pick')chain([q.pa,q.e.aud],[q.prompt,q.e.c]);else if(q.type==='odd')API.playAudio(q.pa,'哪一個字的部首和別人不一樣');else chain([q.pa,q.r.an],[q.prompt,q.r.name]);},250);
   var done=false;
-  document.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){if(done)return;done=true;var o=q.opts[+b.getAttribute('data-k')];var ok=o.id===q.answer;var fb=$('fb');
+  var tm=window.ZYP.timer('choice',$('qtimer'),function(){answer(null);});
+  setTimeout(function(){var go=function(){if(!done)tm.start();};if(q.type==='pick')chain([q.pa,q.e.aud],[q.prompt,q.e.c],go);else if(q.type==='odd')API.playAudio(q.pa,'哪一個字的部首和別人不一樣',go);else chain([q.pa,q.r.an],[q.prompt,q.r.name],go);tm.soon(7000);},250);
+  function answer(b){if(done)return;done=true;tm.stop();var o=b?q.opts[+b.getAttribute('data-k')]:null;var ok=!!o&&o.id===q.answer;var fb=$('fb');
     var e=q.type==='pick'?q.e:q.type==='find'?CH[q.answer]:q.type==='odd'?q.e:null;
     if(e&&!q.retried){var st=R().stats[e.c]||(R().stats[e.c]={a:0,c:0});st.a++;if(ok)st.c++;}
     var expl=q.type==='pick'?'「'+q.e.c+'」的部首是「'+q.e.r.form+'」'+q.e.r.name+'，'+q.e.r.mean:q.type==='find'?'「'+q.answer+'」的部首是「'+q.r.form+'」'+q.r.name:q.type==='mean'?'「'+q.r.form+'」的字大多'+q.r.mean+'，例如 '+q.r.ex.slice(0,3).map(function(x){return x.c;}).join('、'):q.explain;
     if(ok){b.classList.add('ok');if(!q.retried)quiz.first++;API.S().fuel++;fb.className='feedback ok';fb.innerHTML=rnd(['答對了！⭐','好厲害！🌟','部首小博士！📚'])+'<small>'+esc(expl)+'</small>';API.save();API.hud();
       API.playAudio('rp_ok','答對了');setTimeout(nextQ,1500);}
-    else{b.classList.add('bad');document.querySelectorAll('.opt').forEach(function(x){if(q.opts[+x.getAttribute('data-k')].id===q.answer)x.classList.add('ok');});
-      fb.className='feedback bad';fb.innerHTML='再想想看 💪<small>'+esc(expl)+'</small>';API.playAudio('rp_try','再想想看');
+    else{if(b)b.classList.add('bad');document.querySelectorAll('.opt').forEach(function(x){if(q.opts[+x.getAttribute('data-k')].id===q.answer)x.classList.add('ok');});
+      fb.className='feedback bad';fb.innerHTML=(b?'再想想看 💪':'⏰ 超過 '+tm.sec+' 秒，這題先算「不會」')+'<small>'+esc(expl)+'</small>';API.playAudio('rp_try','再想想看');
       if(!q.retried){quiz.wrong.push({c:e?e.c:q.r.form,t:q.type,ans:expl});var r2=JSON.parse(JSON.stringify(q,function(k,v){return k==='r'&&v&&v.ex?undefined:v;}));r2.r=q.r;r2.e=q.e;r2.opts=shuffle(q.opts);r2.retried=true;quiz.qs.push(r2);}
-      API.save();$('next-wrap').innerHTML='<button class="btn" id="next">下一題 ➡</button>';$('next').onclick=nextQ;}};});}
+      API.save();$('next-wrap').innerHTML='<button class="btn" id="next">下一題 ➡</button>';$('next').onclick=nextQ;}}
+  document.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){answer(b);};});}
 function nextQ(){quiz.idx++;if(quiz.idx>=quiz.qs.length)finish();else showQ();}
-function finish(){var base=quiz.qs.filter(function(q){return !q.retried;}).length,c=quiz.first;var stars=c===base?3:c>=Math.ceil(base*0.8)?2:c>=Math.ceil(base*0.5)?1:0;
-  var x=R();if(stars>(x.quiz[quiz.key]||0))x.quiz[quiz.key]=stars;
+function finish(){var base=quiz.qs.filter(function(q){return !q.retried;}).length,c=quiz.first;var pass=c>=window.ZYP.passNeed(base);
+  var x=R();var stars=c===base?3:pass?2:c>=Math.ceil(base*0.5)?1:0;if(stars>(x.quiz[quiz.key]||0))x.quiz[quiz.key]=stars;
   x.tests.push({date:new Date().toISOString(),key:quiz.key,title:quiz.title,score:c,total:base,wrong:quiz.wrong});if(x.tests.length>60)x.tests=x.tests.slice(-60);API.save();API.hud();
-  var html='<div class="big-result">'+(stars===3?'🏆':stars>0?'🌟':'🚀')+'</div><h1>'+(stars===3?'全部答對，部首小博士！':stars>0?'挑戰完成！':'完成練習，再挑戰一次會更好！')+'</h1><p class="sub" style="font-size:22px">第一次就答對 '+c+' / '+base+' 題<br>'+API.starStr(stars)+'</p>';
+  var html='<div class="big-result">'+(c===base?'🏆':pass?'🌟':'🚀')+'</div><h1>'+(c===base?'全部答對，部首小博士！':pass?'過關！':'完成練習，再挑戰一次會更好！')+'</h1><p class="sub" style="font-size:22px">第一次就答對 '+c+' / '+base+' 題</p><div id="runres"></div>';
   if(quiz.wrong.length)html+='<div class="card"><h2>🔧 要再複習的</h2><ul class="list">'+quiz.wrong.map(function(w){return '<li><div>'+esc(w.ans)+'</div></li>';}).join('')+'</ul></div>';
-  html+='<button class="btn" id="again">🔁 再玩一次（換新題）</button><button class="btn blue" id="back">⬅ 回去</button>';
+  html+='<button class="btn" id="again">🚀 再闖一次（換新題）</button><button class="btn blue" id="back">⬅ 回去</button>';
   API.h(html);API.playAudio('rp_done','完成挑戰，好棒');var qq=quiz;
-  if(window.ZYReward)window.ZYReward.earn({src:'部首',key:'rad:'+quiz.key,title:quiz.title,perfect:c===base});
+  var res=window.ZYP.clear(quiz.lk,{first:c,base:base,perfect:c===base,used:quiz.sigs,title:quiz.title,src:'部首',into:$('runres')});
+  $('runres').insertAdjacentHTML('afterbegin',window.ZYP.resultHTML(res,{kind:'choice'}));
   $('again').onclick=function(){var rs=qq.key==='test'?D.rads:qq.key.indexOf('g:')===0?radsOf(qq.key.slice(2)):[RBY[qq.key.slice(2)]];startQuiz(rs,qq.qs.filter(function(q){return !q.retried;}).length,qq.title,qq.key,qq.back);};
   $('back').onclick=qq.back;}
 
@@ -132,6 +149,6 @@ function bindParents(){document.querySelectorAll('[data-rsay]').forEach(function
   var t=$('test-voice-r');if(t)t.onclick=function(){var w=D.rads.filter(function(r){return r.key==='水'||r.key==='手'||r.key==='艸';});chain(w.map(function(r){return r.an;}).concat([CH['河'].aud]),w.map(function(r){return r.name;}).concat(['河流']));};}
 function totalStars(){var x=R(),n=0;for(var k in x.quiz)n+=x.quiz[k];return n;}
 window.ZYRad={init:function(api){API=api;},open:hub,lesson:lesson,group:group,parentsCard:parentsCard,bindParents:bindParents,totalStars:totalStars,
-  badges:function(){var x=R();return D.groups.filter(function(g){return (x.quiz['g:'+g.id]||0)>0;}).length;},
+  badges:function(){return D.groups.filter(function(g){return groupDone(g.id);}).length+(window.ZYP.done('rad:test')?1:0);},count:count,
   _t:{buildQuiz:buildQuiz,D:D,CH:CH,startQuiz:startQuiz,get quiz(){return quiz;}}};
 })();

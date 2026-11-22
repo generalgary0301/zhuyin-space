@@ -1,5 +1,6 @@
 /* 注音太空探險隊 — 🏦 星星存摺（獎勵機制）
- * 完成一關 +1、全部答對 +1、該關有答對進位／退位題 +1（每關最多 +1）。同一關每天最多存 2 次。
+ * 同一關闖關 3 次（題目不重複、每次答對 8 成以上、每題限時）+1、3 次都全對 +1、有答對進位／退位題 +1。同一關每天最多存 2 次。
+ * 2026-11 規則改版時存摺歸零一次（r.reset9），設定、密碼、兌換紀錄保留。
  * 存滿就能兌換獎勵（需家長密碼），兌換券＋倒數計時，時間到會響鈴提醒。資料存在 localStorage。 */
 (function(){
 'use strict';
@@ -12,6 +13,7 @@ function R(){var s=S();var r=s.reward;if(!r)r=s.reward={};
   if(r.bal===undefined)r.bal=0;if(r.earned===undefined)r.earned=0;if(!r.pin)r.pin='0000';if(r.pinChanged===undefined)r.pinChanged=false;
   if(!r.cost)r.cost=5;if(!r.min)r.min=15;if(!r.cap)r.cap=2;r.hist=r.hist||[];r.log=r.log||[];r.day=r.day||{};
   if(!r.alts)r.alts=[{id:'a1',emoji:'🎲',name:'跟爸爸玩桌遊',cost:5},{id:'a2',emoji:'📖',name:'多聽一個睡前故事',cost:5},{id:'a3',emoji:'🍽️',name:'週末選晚餐',cost:5}];
+  if(!r.reset9){r.bal=0;r.earned=0;r.log=[];r.day={};r.reset9=new Date().toISOString();try{API.save();}catch(e){}} // 2026-11 新規則上線：存摺歸零一次（設定與密碼保留）
   return r;}
 function esc(s){return API.esc(s);}
 function rewards(){var r=R();return [{id:'dora',emoji:'📺',name:'看哆啦A夢 '+r.min+' 分鐘',cost:r.cost,min:r.min,yt:true}].concat(r.alts.map(function(a){return {id:a.id,emoji:a.emoji||'🎁',name:a.name,cost:Math.max(1,+a.cost||r.cost),min:0};}));}
@@ -33,7 +35,7 @@ function earn(o){var r=R();var key=o.key||o.title;var t=today();
   var parts=[];
   if(cnt>=PER_KEY_DAY){API.save();insertCard(0,[],o.into,'這一關今天已經存過 '+PER_KEY_DAY+' 次星星囉，換別的關卡練習吧！');return 0;}
   r.day.k[key]=cnt+1;
-  parts.push(['完成「'+o.title+'」',1]);if(o.perfect)parts.push(['全部答對',1]);if(o.regroup)parts.push(['進位／退位題答對',1]);
+  parts.push([(o.star?'闖關 3 次過關「':'完成「')+o.title+'」',1]);if(o.perfect)parts.push([o.star?'3 次都全部答對':'全部答對',1]);if(o.regroup)parts.push(['進位／退位題答對',1]);
   var n=parts.reduce(function(a,p){return a+p[1];},0);
   r.bal+=n;r.earned+=n;r.log.push({t:new Date().toISOString(),src:o.src,title:o.title,n:n});if(r.log.length>80)r.log=r.log.slice(-80);
   API.save();hudBank();insertCard(n,parts,o.into);pop(n,parts);return n;}
@@ -75,9 +77,7 @@ function bank(){var p=$('rw-pop');if(p)p.remove();API.hud();var r=R();var used=u
    '<h2 class="galaxy">🎁 兌換獎勵</h2><p class="muted" style="margin:-4px 0 8px">今天還可以兌換 <b>'+left+'</b> 次（每天最多 '+r.cap+' 次）・兌換時要請爸爸媽媽輸入家長密碼</p><div class="rw-list">';
   rewards().forEach(function(x){var can=r.bal>=x.cost&&left>0;
     html+='<div class="rw-item'+(x.id==='dora'?' main':'')+'"><span class="rw-emo">'+x.emoji+'</span><div class="rw-info"><b>'+esc(x.name)+'</b><div class="muted">需要 ⭐ '+x.cost+(x.min?'・計時 '+x.min+' 分鐘':'')+'</div></div><button class="btn '+(can?'gold':'ghost')+' rw-go" data-rw="'+x.id+'"'+(can?'':' disabled')+'>'+(can?'兌換':left<=0?'今天已滿':'還差 '+(x.cost-r.bal))+'</button></div>';});
-  html+='</div><div class="card"><h2>⭐ 怎麼存星星？</h2><ul class="list"><li><div>完成一個關卡或測驗（注音、部首、數學、筆順都可以）</div><b>+1</b></li><li><div>全部第一次就答對</div><b>+1</b></li><li><div>那一關有答對進位或退位的題目</div><b>+1</b></li></ul><p class="muted">同一關每天最多存 '+PER_KEY_DAY+' 次，多練不同的關卡吧！</p></div>';
-  var lg=r.log.slice(-6).reverse();
-  if(lg.length)html+='<div class="card"><h2>📒 最近存入</h2><ul class="list">'+lg.map(function(l){return '<li><div>'+esc(l.src)+'・'+esc(l.title)+'<div class="muted">'+fmt(l.t)+'</div></div><b>+'+l.n+' ⭐</b></li>';}).join('')+'</ul></div>';
+  html+='</div><div class="card"><h2>⭐ 怎麼存星星？</h2><ul class="list"><li><div>同一關<b>過關 3 次</b>（3 次題目都不一樣；每次第一次作答答對 8 成以上，每題要在時間內作答）</div><b>+1</b></li><li><div>3 次都全部答對</div><b>+1</b></li><li><div>數學：有答對進位或退位的題目</div><b>+1</b></li><li><div>筆順：一個符號 3 關（描一描、虛線寫、自己寫）都過</div><b>+1</b></li></ul></div>';
   html+='<button class="btn ghost" id="back">⬅ 回太空基地</button>';
   API.h(html);
   document.querySelectorAll('[data-rw]').forEach(function(b){b.onclick=function(){redeem(b.getAttribute('data-rw'));};});
@@ -241,7 +241,7 @@ function parentsCard(){var r=R();var unlocked=Date.now()<unlockUntil;
   var html='<div class="card" id="rw-parents"><h2>🏦 星星存摺（獎勵機制）</h2>';
   if(!r.pinChanged)html+='<p class="feedback bad" style="font-size:15px">⚠️ 家長密碼目前是預設的 <b>0000</b>，請按下面的按鈕改成只有爸媽知道的密碼。</p>';
   html+='<p>目前存摺：⭐ <b>'+r.bal+'</b>　累計存入 '+r.earned+'　今天已兌換 '+usedToday()+' / '+r.cap+' 次</p>'+
-   '<p class="muted">規則：完成一關 +1、全部答對 +1、答對進位／退位題 +1（每關最多 +1）；同一關每天最多存 '+PER_KEY_DAY+' 次。</p>';
+   '<p class="muted">規則：同一關過關 3 次（題目不重複、每次答對 8 成以上、每題限時）+1、3 次都全對 +1、數學有答對進位／退位題 +1、筆順一個符號 3 關都過 +1；同一關每天最多存 '+PER_KEY_DAY+' 次。2026/11 新規則上線時，存摺已歸零一次（設定、密碼、兌換紀錄保留）。</p>';
   if(!unlocked)html+='<button class="btn" id="rw-unlock">🔒 輸入家長密碼，修改設定</button>';
   else{html+='<div class="rw-form"><label>📺 哆啦A夢需要幾顆星 <input type="number" min="1" max="50" id="rw-cost" value="'+r.cost+'"></label>'+
     '<label>⏱️ 每次看幾分鐘 <input type="number" min="1" max="120" id="rw-min" value="'+r.min+'"></label>'+
@@ -278,5 +278,5 @@ function bindParents(){var r=R();
   var vd=$('rw-vdef');if(vd)vd.onclick=function(){if(!confirm('恢復成預設的影片清單？'))return;var r=V();r.vids=DEF_VIDS.slice();r.vbad={};r.vpos={i:0,t:0};API.save();rerender();};
   document.querySelectorAll('[data-adj]').forEach(function(b){b.onclick=function(){r.bal=Math.max(0,r.bal+parseInt(b.getAttribute('data-adj'),10));API.save();hudBank();rerender();};});}
 
-window.ZYReward={init:function(api){API=api;V();hudBank();setTimeout(tick,500);},theater:theater,_p:function(){return player;},_vids:goodVids,earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
+window.ZYReward={_pin:function(t,f){pinPad(t,f);},init:function(api){API=api;V();hudBank();setTimeout(tick,500);},theater:theater,_p:function(){return player;},_vids:goodVids,earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
 })();

@@ -88,16 +88,17 @@ function playDemo(svg,ch,opt){opt=opt||{};var tok=++demoToken;svg.__tok=tok;
 
 // ---------- screens ----------
 function sayBpmf(ch){var d=D[ch];if(d&&d.aud)API.playAudio(d.aud,ch);}
+function symDone(c){return stars(c)===3;}
+function symItems(){return ORDER.map(function(c){var n=stars(c);return {c:c,done:n===3,icon:'<b class="zs-mapch">'+c+'</b>',title:(ORDER.indexOf(c)+1)+'. 「'+c+'」　'+D[c].n+' 畫',sub:'⭐ '+n+' / 3 關（描一描・虛線寫・自己寫）',color:'linear-gradient(135deg,#a29bfe,#6c5ce7)'};});}
+function symOpen(c){var items=symItems();return window.ZYP.isOpen(items,ORDER.indexOf(c));}
 function grid(){
-  API.hud();var tot=totalStars();
-  var html='<div class="ship">✍️</div><h1>筆順訓練基地</h1><p class="sub">ㄅ 到 ㄦ 37 個注音，看筆順、跟著寫！</p>';
-  html+='<div class="card"><b>⭐ 筆順星星：'+tot+' / '+(ORDER.length*3)+'</b><div class="progress" style="margin-top:6px"><i style="width:'+(tot/(ORDER.length*3)*100)+'%"></i></div><div class="muted">每個符號 3 關：①描一描 ②虛線寫 ③自己寫，每過一關得 1 顆星。筆順依教育部《國語注音符號手冊》。</div></div>';
-  GROUPS.forEach(function(g){html+='<h2 class="zs-gh">'+g[0]+'</h2><div class="zs-grid">';
-    g[1].forEach(function(c){var n=stars(c);html+='<button class="zs-tile'+(n===3?' done':'')+'" data-zs="'+c+'"><span class="zs-ch">'+c+'</span><span class="zs-st">'+API.starStr(n)+'</span><span class="zs-cnt">'+D[c].n+' 畫</span></button>';});
-    html+='</div>';});
+  API.hud();var tot=totalStars();var nd=ORDER.filter(symDone).length;
+  var html='<div class="muted">📖 國語星系</div><div class="ship">✍️</div><h1>筆順訓練基地</h1><p class="sub">ㄅ 到 ㄦ 37 個注音，由下往上一個一個寫！</p>';
+  html+='<div class="card"><b>✍️ 完成 '+nd+' / '+ORDER.length+' 個符號（⭐ '+tot+' / '+(ORDER.length*3)+' 關）</b><div class="progress" style="margin-top:6px"><i style="width:'+(tot/(ORDER.length*3)*100)+'%"></i></div><div class="muted">每個符號 3 關：①描一描 ②虛線寫 ③自己寫，要照順序過關；3 關都過了才會打開下一個符號，也會存 1 顆星到星星存摺。37 個都完成，就會打開「注音符號練習」。筆順依教育部《國語注音符號手冊》。</div></div>';
+  var items=symItems();var mp=window.ZYP.mapHTML(items,{cls:'compact'});html+=mp.html;
   html+='<button class="btn ghost" id="zs-back">⬅ 回國語星系</button>';
   API.h(html);
-  document.querySelectorAll('[data-zs]').forEach(function(b){b.onclick=function(){symbol(b.getAttribute('data-zs'));};});
+  window.ZYP.bindMap(document,items,mp.sts,function(it){symbol(it.c);});
   document.getElementById('zs-back').onclick=API.home;
 }
 function stepsSVG(ch){ // 筆順分解：1、1+2、1+2+3…
@@ -106,7 +107,9 @@ function stepsSVG(ch){ // 筆順分解：1、1+2、1+2+3…
     for(var j=0;j<=k;j++)s+='<path d="'+S[j].d+'" fill="'+(j===k?'#ffd166':'rgba(255,255,255,.85)')+'"/>';
     s+='</svg>';out+='<div class="zs-stepw">'+s+'<div>第 '+(k+1)+' 筆</div></div>';}
   return out;}
+function stageOpen(ch,i){var r=peek(ch);return i===0||(r&&r.st[i-1]>0)||window.ZYP.unlockedAll();}
 function symbol(ch){
+  if(!symOpen(ch)){API.toast('🔒 先完成前面的符號喔');grid();return;}
   var d=D[ch],r=peek(ch);var idx=ORDER.indexOf(ch);
   var html='<div class="card zs-head"><div class="zs-big">'+ch+'</div><div><div style="font-size:22px;font-weight:800">共 '+d.n+' 畫</div><div class="zs-st" style="font-size:20px">'+API.starStr(stars(ch))+'</div>'+
     '<button class="speak" id="zs-say" style="font-size:20px;margin:6px 0">🔊 聽讀音</button></div></div>';
@@ -114,18 +117,19 @@ function symbol(ch){
     '<button class="btn blue" id="zs-replay" style="font-size:20px;padding:12px">▶ 再看一次</button>'+
     (NOTES[ch]?'<p class="muted" style="margin:4px 0">📘 教育部手冊：'+NOTES[ch]+'</p>':'')+
     '<div class="zs-steps">'+stepsSVG(ch)+'</div></div>';
-  html+='<div class="card"><b>🚀 寫字練習（可以一直重複練）</b>';
-  STAGES.forEach(function(s,i){var done=r&&r.st[i]>0;html+='<div class="mission" style="margin-top:10px"><div><b>'+(i+1)+'. '+s.icon+' '+s.n+'</b> '+(done?'⭐':'☆')+'<div class="muted">'+s.tip+(r&&r.st[i]?'・已完成 '+r.st[i]+' 次':'')+'</div></div><button class="btn'+(i===2?' green':'')+'" data-stage="'+i+'">開始</button></div>';});
+  html+='<div class="card"><b>🚀 寫字闖關：3 關照順序過（可以一直重複練）</b>';
+  var nextSt=-1;STAGES.forEach(function(s,i){if(nextSt<0&&!(r&&r.st[i]>0))nextSt=i;});
+  STAGES.forEach(function(s,i){var done=r&&r.st[i]>0;var open=stageOpen(ch,i);html+='<div class="mission'+(open?'':' locked')+(i===nextSt?' nextm':'')+'" style="margin-top:10px"><div><b>'+(i+1)+'. '+s.icon+' '+s.n+'</b> '+(done?'⭐':open?'☆':'🔒')+(i===nextSt?' <span class="lvnext inl">👉 下一關</span>':'')+'<div class="muted">'+s.tip+(r&&r.st[i]?'・已完成 '+r.st[i]+' 次':'')+'</div></div><button class="btn'+(i===2?' green':'')+(open?'':' ghost')+'" data-stage="'+i+'">'+(open?'開始':'🔒')+'</button></div>';});
   html+='</div><div class="zs-nav"><button class="btn ghost" id="zs-prev"'+(idx<=0?' disabled':'')+'>⬅ '+(ORDER[idx-1]||'')+'</button><button class="btn ghost" id="zs-grid">🔠 全部</button><button class="btn ghost" id="zs-next"'+(idx>=ORDER.length-1?' disabled':'')+'>'+(ORDER[idx+1]||'')+' ➡</button></div>';
   API.h(html);
   var svg=document.getElementById('zs-demo');svg.__base=svg.childNodes.length;
   playDemo(svg,ch);
   document.getElementById('zs-replay').onclick=function(){playDemo(svg,ch);};
   document.getElementById('zs-say').onclick=function(){sayBpmf(ch);};
-  document.querySelectorAll('[data-stage]').forEach(function(b){b.onclick=function(){practice(ch,+b.getAttribute('data-stage'));};});
+  document.querySelectorAll('[data-stage]').forEach(function(b){b.onclick=function(){var i=+b.getAttribute('data-stage');if(!stageOpen(ch,i)){API.toast('🔒 先過前一關喔');return;}practice(ch,i);};});
   document.getElementById('zs-grid').onclick=grid;
   document.getElementById('zs-prev').onclick=function(){if(idx>0)symbol(ORDER[idx-1]);};
-  document.getElementById('zs-next').onclick=function(){if(idx<ORDER.length-1)symbol(ORDER[idx+1]);};
+  document.getElementById('zs-next').onclick=function(){if(idx<ORDER.length-1){if(!symOpen(ORDER[idx+1])){API.toast('🔒 「'+ch+'」3 關都過了，才能寫下一個');return;}symbol(ORDER[idx+1]);}};
   setTimeout(function(){sayBpmf(ch);},150);
 }
 
@@ -210,8 +214,9 @@ function practice(ch,stage){
     if((b=document.getElementById('zs-nextch')))b.onclick=function(){symbol(nextCh);};
     if((b=document.getElementById('zs-gridend')))b.onclick=grid;
     document.getElementById('zs-again').onclick=function(){practice(ch,stage);};
-    if(allDone())API.toast('🏅 37 個注音筆順全部完成！');
-    if(window.ZYReward)window.ZYReward.earn({src:'筆順',key:'st:'+ch+':'+stage,title:ch+' '+STAGES[stage].n,perfect:perfect,into:box});
+    if(allDone())API.toast('🏅 37 個注音筆順全部完成！「注音符號練習」打開了！');
+    if(first&&stars(ch)===3&&!window.ZYP.done('st:'+ch)){var perf3=r.best.every(function(b){return b===0;});window.ZYP.award('st:'+ch,{src:'筆順',title:'「'+ch+'」筆順 3 關',perfect:perf3,into:box});}
+    else if(first)box.insertAdjacentHTML('beforeend','<div class="muted">「'+ch+'」已過 '+stars(ch)+' / 3 關，3 關都過就能存 1 顆星 ⭐</div>');
   }
   document.getElementById('zs-hint').onclick=hintAnim;
   document.getElementById('zs-clear').onclick=function(){var b=document.querySelector('.zs-done');if(b)b.remove();reset();};
@@ -240,6 +245,6 @@ function parentsCard(){
   return html;}
 function bindParents(root){(root||document).querySelectorAll('[data-zsgo]').forEach(function(b){b.onclick=function(){symbol(b.getAttribute('data-zsgo'));};});}
 
-window.ZYStroke={init:function(api){API=api;},open:grid,symbol:symbol,practice:practice,parentsCard:parentsCard,bindParents:bindParents,
+window.ZYStroke={init:function(api){API=api;},symDone:symDone,open:grid,symbol:symbol,practice:practice,parentsCard:parentsCard,bindParents:bindParents,
   totalStars:totalStars,allDone:allDone,judge:judge,data:D,order:ORDER,get P(){return P;}};
 })();

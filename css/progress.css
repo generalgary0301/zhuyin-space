@@ -1,0 +1,53 @@
+/* 闖關地圖（由下往上）、每題計時條、古文出處、裝置卡 */
+.lvmap{position:relative;display:flex;flex-direction:column-reverse;gap:14px;padding:10px 4px 6px;margin:8px 0}
+.lvmap::before{content:"";position:absolute;left:50%;top:18px;bottom:18px;width:6px;margin-left:-3px;border-radius:3px;background:repeating-linear-gradient(to top,rgba(255,255,255,.35) 0 10px,transparent 10px 20px)}
+.lvstart{position:relative;align-self:center;font-size:15px;font-weight:700;background:rgba(255,255,255,.15);border-radius:16px;padding:6px 14px}
+.lvnode{position:relative;display:flex;align-items:center;gap:10px;width:86%;border:none;border-radius:22px;padding:12px 14px;color:#fff;text-align:left;font-size:16px;background:var(--c,linear-gradient(135deg,#5f6caf,#3b4a8c));box-shadow:0 5px 0 rgba(0,0,0,.35)}
+.lvnode.l{align-self:flex-start}.lvnode.r{align-self:flex-end}
+.lvnode:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.lvnum{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
+.lvbody{display:flex;flex-direction:column;min-width:0;flex:1}
+.lvicon{font-size:22px;line-height:1.1}
+.lvt{font-weight:800;font-size:18px;line-height:1.25}
+.lvsub{font-size:13px;opacity:.9;margin-top:2px}
+.zs-mapch{font-size:30px;font-weight:900}
+.lvnode.st-locked{filter:grayscale(.85) brightness(.6);opacity:.75}
+.lvnode.st-done .lvnum{background:#64e39b;color:#123}
+.lvnode.st-next{outline:4px solid #ffd166;outline-offset:2px;animation:lvpulse 1.6s ease-in-out infinite}
+.lvnode.st-next .lvnum{background:#ffd166;color:#1a1a2e}
+@keyframes lvpulse{50%{box-shadow:0 5px 0 rgba(0,0,0,.35),0 0 22px rgba(255,209,102,.8)}}
+.lvnext{position:absolute;top:-12px;right:10px;background:#ffd166;color:#1a1a2e;font-weight:800;font-size:13px;border-radius:12px;padding:2px 8px}
+.lvnext.inl{position:static;display:inline-block;margin-left:4px}
+.lvnode.shake{animation:rwShake .4s}
+.lvmap.compact .lvnode{padding:8px 12px;width:80%}
+.lvmap.compact .lvt{font-size:16px}
+.lvmap.zones .lvnode{width:100%;padding:18px 14px}
+.lvmap.zones .lvicon{font-size:30px}
+.lvmap.zones .lvt{font-size:22px}
+.lvstar{display:inline-block;margin-left:6px;font-weight:800}
+.mission.locked{opacity:.55}
+.mission.nextm{outline:3px solid #ffd166;border-radius:14px;padding:6px}
+/* 計時條 */
+.qtimer{position:relative;height:26px;border-radius:13px;background:rgba(255,255,255,.12);overflow:hidden;margin:8px 0 4px}
+.qtimer i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#64e39b,#5ec8ff);transition:width .1s linear}
+.qtimer span{position:relative;display:block;text-align:center;font-size:15px;font-weight:800;line-height:26px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.qtimer.wait i{width:100%;opacity:.25}
+.qtimer.low i{background:linear-gradient(90deg,#ff6b81,#ffb347)}
+.qtimer.out i{width:0}
+.qtimer.out{background:rgba(255,107,129,.35)}
+.qtimer.stop i{opacity:.35}
+.qtimer.off{display:none}
+/* 規則、結果 */
+.rulecard ul{margin:6px 0 0;padding-left:20px;line-height:1.55;font-size:15px}
+.runcard .runbig{font-size:22px;font-weight:800}
+.runcard .runrow{font-size:34px;letter-spacing:4px;margin:4px 0}
+.runcard.ok{background:rgba(100,227,155,.18)}
+.runstr{font-weight:700}.runstr.big{font-size:24px}
+/* 古文 */
+.ctag{display:inline-block;background:#f5e6c8;color:#5b3a12;border-radius:10px;padding:2px 10px;font-size:14px;font-weight:700;margin:4px 0}
+.classic{margin-top:8px;text-align:center}
+.cline{font-size:19px;font-weight:700;letter-spacing:1px;margin-top:2px}
+.q-word.long{font-size:44px;letter-spacing:2px}
+.opt.xs{font-size:17px!important}
+.warnbox{background:rgba(255,107,129,.25);border:2px solid #ff6b81;border-radius:14px;padding:10px;margin:6px 0}
+@media (min-width:700px){.lvnode{width:70%}.lvmap.zones .lvnode{width:100%}}

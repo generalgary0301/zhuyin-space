@@ -33,9 +33,9 @@ function say(ids,onend){ // 依序播放多段音檔
   ids=ids.filter(Boolean);var my=++seqTok,i=0;
   (function next(){if(my!==seqTok)return;if(i>=ids.length){if(onend)onend();return;}var id=ids[i++];API.playAudio(id,wordsOf([id]),function(){if(my===seqTok)setTimeout(next,10);});})();}
 function stopSay(){seqTok++;}
-function sayQ(a,op,b){ // 題目：20 以內有整句錄音（語調自然），其他用數字接著唸
-  if((op==='+'&&a<=10&&b<=10)||(op==='-'&&a<=19&&b<=10&&b<=a))return say(['q_'+(op==='+'?'a':'s')+'_'+a+'_'+b]);
-  say(numIds(a).concat([op==='+'?'m_plus':'m_minus']).concat(numIds(b)).concat(['m_eqq']));}
+function sayQ(a,op,b,onend){ // 題目：20 以內有整句錄音（語調自然），其他用數字接著唸
+  if((op==='+'&&a<=10&&b<=10)||(op==='-'&&a<=19&&b<=10&&b<=a))return say(['q_'+(op==='+'?'a':'s')+'_'+a+'_'+b],onend);
+  say(numIds(a).concat([op==='+'?'m_plus':'m_minus']).concat(numIds(b)).concat(['m_eqq']),onend);}
 function sayEq(a,op,b,c,onend){say(numIds(a).concat([op==='+'?'m_plus':'m_minus']).concat(numIds(b)).concat(['m_eq']).concat(numIds(c)),onend);}
 
 // ---------- 動畫舞台 ----------
@@ -277,11 +277,12 @@ var LBY={};LESSONS.forEach(function(l){LBY[l.id]=l;});
 function lessonPage(id,fresh){
   var l=LBY[id];var sc=fresh?l.more():l.demo();var m=M();m.lesson[id]=(m.lesson[id]||0)+1;API.save();
   API.h('<div class="muted">🔢 數學星系 › '+(l.g==='add'?'加法教室':'減法教室')+'</div><h2 class="center">'+l.icon+' '+l.name+'</h2><div id="player"></div>'+
-    '<button class="btn blue" id="auto">▶ 自動播放</button><button class="btn" id="fresh">🎲 換一題再看</button><button class="btn ghost" id="back">⬅ 回'+(l.g==='add'?'加法':'減法')+'教室</button>');
+    '<button class="btn blue" id="auto">▶ 自動播放</button><button class="btn" id="fresh">🎲 換一題再看</button>'+(function(){var nx=nextNode('L:'+id);return nx?'<button class="btn green" id="nextn">✅ 看完了，下一關：'+API.esc(nx.title)+' ➡</button>':'';})()+'<button class="btn ghost" id="back">⬅ 回闖關地圖</button>');
   var p=new Player($('player'),sc);
   $('auto').onclick=function(){p.reset();p.auto(2800);};
   $('fresh').onclick=function(){p.stop();stopSay();lessonPage(id,true);};
-  $('back').onclick=function(){p.stop();stopSay();classroom(l.g);};}
+  var nb=$('nextn');if(nb)nb.onclick=function(){p.stop();stopSay();openNode(nextNode('L:'+id));};
+  $('back').onclick=function(){p.stop();stopSay();hub();};}
 function classroom(g){
   var ls=LESSONS.filter(function(l){return l.g===g;});var m=M();
   var html='<div class="ship">'+(g==='add'?'➕':'➖')+'</div><h1>'+(g==='add'?'加法教室':'減法教室')+'</h1><p class="sub">看動畫學方法，⭐ 是最重要的'+(g==='add'?'「進位」':'「退位」')+'</p><div class="planet-grid">';
@@ -328,10 +329,14 @@ function practiceList(){
   LEVELS.forEach(function(l,i){var r=m.lv[l.id]||{};html+='<div class="card mission'+(l.star?' starc':'')+'"><div><b>第 '+(i+1)+' 關'+(l.star?' ⭐':'')+'</b>　'+API.starStr(r.stars||0)+'<div>'+l.name+'</div><div class="muted">'+l.grade+(r.plays?'・玩過 '+r.plays+' 次・最佳 '+r.best+'/'+NQ:'')+'</div></div><button class="btn" data-lv="'+l.id+'">出發 🚀</button></div>';});
   html+='<button class="btn ghost" id="back">⬅ 回數學星系</button>';
   API.h(html);document.querySelectorAll('[data-lv]').forEach(function(b){b.onclick=function(){startLevel(b.getAttribute('data-lv'));};});$('back').onclick=hub;}
-function makeSet(lv){var seen={},out=[],guard=0;while(out.length<NQ&&guard++<400){var q=lv.gen();if(seen[q.key])continue;seen[q.key]=1;out.push(q);}return out;}
-function startLevel(id){var lv=LVBY[id];sess={lv:lv,qs:makeSet(lv),idx:0,first:0,wrong:[],t0:Date.now()};showMQ();}
+function makeSet(lv,avoid){avoid=avoid||{};var seen={},out=[],guard=0;while(out.length<NQ&&guard++<600){var q=lv.gen();if(seen[q.key]||avoid[q.key])continue;seen[q.key]=1;out.push(q);}
+  guard=0;while(out.length<NQ&&guard++<400){var q2=lv.gen();if(seen[q2.key])continue;seen[q2.key]=1;q2.reused=true;out.push(q2);} // 題目組合太少（例如合十只有 9 種）才重複
+  guard=0;while(out.length<NQ&&guard++<200){out.push(lv.gen());}
+  return out;}
+function startLevel(id){var lv=LVBY[id];var qs=makeSet(lv,window.ZYP.used('math:'+id));sess={lv:lv,qs:qs,idx:0,first:0,wrong:[],t0:Date.now(),keys:qs.map(function(q){return q.key;})};showMQ();}
 function qText(q){if(q.kind==='ten')return q.a+' 和 □ 合起來是 10';return q.a+' '+(q.op==='+'?'＋':'－')+' '+q.b+' ＝ □';}
 function qSay(q){if(q.kind==='ten')return say(numIds(q.a).concat(['m_heq10']));sayQ(q.a,q.op,q.b);}
+function qSayDone(q,cb){if(q.kind==='ten')return say(numIds(q.a).concat(['m_heq10']),cb);sayQ(q.a,q.op,q.b,cb);}
 function regroup(q){if(q.kind==='ten')return false;var a=q.a,b=q.b,c=0;
   if(q.op==='+'){while(a||b){var s=a%10+b%10+c;if(s>=10)return true;c=0;a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
   while(b){if(a%10<b%10)return true;a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
@@ -342,47 +347,59 @@ function colQ(q,val){var len=Math.max(String(q.a).length,String(q.b).length,Stri
   return '<div class="colgrid q c'+len+'">'+row('',A)+row(q.op==='+'?'＋':'－',B)+'<div class="cg-line"></div>'+row('',V,'res')+'</div>';}
 function showMQ(){
   var q=sess.qs[sess.idx];var total=sess.qs.length;
-  var html='<div class="muted">🧠 '+sess.lv.name+'</div><div class="progress"><i style="width:'+(sess.idx/total*100)+'%"></i></div>'+
+  var html='<div class="muted">🧠 '+sess.lv.name+'</div><div class="progress"><i style="width:'+(sess.idx/total*100)+'%"></i></div><div id="qtimer"></div>'+
    (q.retried?'<p class="center"><span class="retry-tag">🔁 剛剛錯的，再試一次</span></p>':'')+
    (q.col?'<div id="qshow">'+colQ(q,'')+'</div>':'<div class="mq" id="qshow">'+API.esc(qText(q)).replace('□','<span class="ansbox" id="ab">?</span>')+'</div>')+
    '<button class="speak" id="say">🔊 聽題目</button><div class="feedback" id="fb"></div><div id="padw">'+padHTML()+'</div><div id="explain"></div><div id="next-wrap"></div>';
-  API.h(html);$('say').onclick=function(){qSay(q);};setTimeout(function(){qSay(q);},250);
-  var tries=0;
-  bindPad(document,4,function(v){if(q.col)$('qshow').innerHTML=colQ(q,v);else{var ab=$('ab');if(ab)ab.textContent=v===''?'?':v;}},function(v,clear){
-    var ok=v===qAns(q);var fb=$('fb');
-    if(ok){if(!q.retried&&tries===0)sess.first++;if(regroup(q))sess.rg=true;API.S().fuel++;API.save();API.hud();fb.className='feedback ok';fb.innerHTML=rnd(['答對了！⭐','好厲害！🌟','心算小太空人！🚀','完美！🛸'])+'<small>'+eqStr(q)+'</small>';
-      say([rnd(['m_ok','m_ok2','m_ok3'])]);$('padw').style.pointerEvents='none';setTimeout(nextMQ,1100);return;}
-    tries++;
-    if(!q.retried&&tries===1){sess.wrong.push({q:qText(q),ans:qAns(q),input:v,lv:sess.lv.id});var r=JSON.parse(JSON.stringify(q));r.retried=true;sess.qs.push(r);}
+  API.h(html);
+  var tries=0,over=false;
+  var tm=window.ZYP.timer('input',$('qtimer'),function(){reveal(null,true);});
+  $('say').onclick=function(){qSay(q);};
+  setTimeout(function(){qSayDone(q,function(){if(!over&&tries===0)tm.start();});tm.soon(7000);},250);
+  function miss(v){if(!q.retried&&tries===1){sess.wrong.push({q:qText(q),ans:qAns(q),input:v,lv:sess.lv.id});var r=JSON.parse(JSON.stringify(q));r.retried=true;sess.qs.push(r);}}
+  function reveal(v,timeout){if(over)return;over=true;tm.stop();var fb=$('fb');
+    if(timeout){tries++;miss('⏰超時');}
     fb.className='feedback bad';
-    if(tries===1&&!q.col&&(sess.lv.id==='m1'||sess.lv.id==='m2'||sess.lv.id==='m3')){fb.innerHTML='再想想看 💪<small>你寫的是 '+v+'</small>';say(['m_try']);clear();return;}
-    fb.innerHTML='正確答案是 <b>'+qAns(q)+'</b><small>'+eqStr(q)+'　一起看看怎麼算 👇</small>';$('padw').style.display='none';
+    fb.innerHTML=(timeout?'⏰ 超過 '+tm.sec+' 秒，這題先算「不會」<br>':'')+'正確答案是 <b>'+qAns(q)+'</b><small>'+eqStr(q)+'　一起看看怎麼算 👇</small>';$('padw').style.display='none';
     var ex=$('explain');ex.innerHTML='<div class="card" id="explayer"></div>';var p=new Player($('explayer'),sceneFor(q));
     say(['m_look'],function(){p.auto(2600);});
     $('next-wrap').innerHTML='<button class="btn blue" id="replay">🔁 再看一次</button><button class="btn" id="next">下一題 ➡</button>';
-    $('replay').onclick=function(){p.stop();p.reset();p.auto(2600);};$('next').onclick=function(){p.stop();stopSay();nextMQ();};});}
+    $('replay').onclick=function(){p.stop();p.reset();p.auto(2600);};$('next').onclick=function(){p.stop();stopSay();nextMQ();};}
+  bindPad(document,4,function(v){if(over)return;if(q.col)$('qshow').innerHTML=colQ(q,v);else{var ab=$('ab');if(ab)ab.textContent=v===''?'?':v;}},function(v,clear){
+    if(over)return;var ok=v===qAns(q);var fb=$('fb');
+    if(ok){over=true;tm.stop();if(!q.retried&&tries===0)sess.first++;if(regroup(q))sess.rg=true;API.S().fuel++;API.save();API.hud();fb.className='feedback ok';fb.innerHTML=rnd(['答對了！⭐','好厲害！🌟','心算小太空人！🚀','完美！🛸'])+'<small>'+eqStr(q)+'</small>';
+      say([rnd(['m_ok','m_ok2','m_ok3'])]);$('padw').style.pointerEvents='none';setTimeout(nextMQ,1100);return;}
+    tries++;tm.stop();miss(v);
+    fb.className='feedback bad';
+    if(tries===1&&!q.col&&(sess.lv.id==='m1'||sess.lv.id==='m2'||sess.lv.id==='m3')){fb.innerHTML='再想想看 💪<small>你寫的是 '+v+'（這題已經不算第一次答對，再試一次）</small>';say(['m_try']);clear();return;}
+    reveal(v,false);});}
 function eqStr(q){if(q.kind==='ten')return q.a+' ＋ '+q.b+' ＝ 10';return q.a+' '+(q.op==='+'?'＋':'－')+' '+q.b+' ＝ '+q.ans;}
 function nextMQ(){sess.idx++;if(sess.idx>=sess.qs.length)finishMQ();else showMQ();}
 function finishMQ(){
-  var base=sess.qs.filter(function(q){return !q.retried;}).length,c=sess.first;var stars=c===base?3:c>=Math.ceil(base*0.8)?2:c>=Math.ceil(base*0.5)?1:0;
+  var base=sess.qs.filter(function(q){return !q.retried;}).length,c=sess.first;var pass=c>=window.ZYP.passNeed(base);var stars=c===base?3:pass?2:c>=Math.ceil(base*0.5)?1:0;
   var m=M();var r=m.lv[sess.lv.id]||(m.lv[sess.lv.id]={stars:0,best:0,plays:0,a:0,c:0});r.plays++;r.a+=base;r.c+=c;if(stars>r.stars)r.stars=stars;if(c>r.best)r.best=c;
   var secs=Math.round((Date.now()-sess.t0)/1000);
   m.log.push({date:new Date().toISOString(),lv:sess.lv.id,score:c,total:base,secs:secs,wrong:sess.wrong});if(m.log.length>60)m.log=m.log.slice(-60);API.save();API.hud();
-  var html='<div class="big-result">'+(stars===3?'🏆':stars>0?'🌟':'🚀')+'</div><h1>'+(stars===3?'全部答對，太神了！':stars>0?'過關！':'完成練習，再挑戰一次會更好！')+'</h1>'+
-   '<p class="sub" style="font-size:22px">第一次就答對 '+c+' / '+base+' 題<br>'+API.starStr(stars)+'<br><span class="muted">用時 '+Math.floor(secs/60)+' 分 '+(secs%60)+' 秒</span></p>';
+  var html='<div class="big-result">'+(c===base?'🏆':pass?'🌟':'🚀')+'</div><h1>'+(c===base?'全部答對，太神了！':pass?'過關！':'完成練習，再挑戰一次會更好！')+'</h1>'+
+   '<p class="sub" style="font-size:22px">第一次就答對 '+c+' / '+base+' 題<br><span class="muted">用時 '+Math.floor(secs/60)+' 分 '+(secs%60)+' 秒</span></p><div id="runres"></div>';
   if(sess.wrong.length)html+='<div class="card"><h2>🔧 要再練習的題目</h2><ul class="list">'+sess.wrong.map(function(w){return '<li><div>'+API.esc(w.q.replace('□',String(w.ans)))+'<div class="muted">你寫 '+API.esc(w.input)+'</div></div></li>';}).join('')+'</ul></div>';
-  html+='<button class="btn" id="again">🔁 再玩一次（換新題）</button><button class="btn blue" id="back">⬅ 回練習場</button>';
-  API.h(html);say([stars>0?'m_done':'m_done2']);var id=sess.lv.id;
-  if(window.ZYReward)window.ZYReward.earn({src:'數學',key:'math:'+id,title:sess.lv.name,perfect:c===base,regroup:!!sess.rg});$('again').onclick=function(){startLevel(id);};$('back').onclick=practiceList;}
+  html+='<div id="res-btns"></div>';
+  API.h(html);say([pass?'m_done':'m_done2']);var id=sess.lv.id;
+  var res=window.ZYP.clear('math:'+id,{first:c,base:base,perfect:c===base,used:sess.keys,regroup:!!sess.rg,title:sess.lv.name,src:'數學',into:$('runres')});
+  $('runres').insertAdjacentHTML('afterbegin',window.ZYP.resultHTML(res,{kind:'input'}));
+  var nx=res.got?nextNode('math:'+id):null;
+  $('res-btns').innerHTML=(nx?'<button class="btn green" id="nextn">下一關：'+API.esc(nx.title)+' ➡</button>':'')+'<button class="btn" id="again">🚀 再闖一次（換新題）</button><button class="btn blue" id="back">⬅ 回闖關地圖</button>';
+  if(nx)$('nextn').onclick=function(){openNode(nx);};
+  $('again').onclick=function(){startLevel(id);};$('back').onclick=hub;}
 
 // ---------- ⭐ 進位退位特訓營（一步一步引導） ----------
 var CAMP=[
- {id:'c1',name:'湊十進位（20 以內）',icon:'🔟',gen:function(){var a=rint(5,9);return sceneMakeTen(a,rint(11-a,9));}},
- {id:'c2',name:'二位數加法進位（積木）',icon:'🧱',gen:function(){var x=genAdd2(true);return sceneBlocksAdd(x[0],x[1]);}},
- {id:'c3',name:'直式加法：二次進位',icon:'📐',gen:function(){var x=genAdd3(2);return sceneColAdd(x[0],x[1]);}},
- {id:'c4',name:'破十退位（20 以內）',icon:'🍪',gen:function(){var x=genBreak();return sceneBreakTen(x[0],x[1]);}},
- {id:'c5',name:'二位數減法退位（積木）',icon:'🧱',gen:function(){var x=genSub2(true);return sceneBlocksSub(x[0],x[1]);}},
- {id:'c6',name:'直式減法：一次退位',icon:'📐',gen:function(){var x=genSub3(1);return sceneColSub(x[0],x[1]);}}
+ {id:'c1',name:'湊十進位（20 以內）',icon:'🔟',gen:function(){var a=rint(5,9),b=rint(11-a,9);var x=sceneMakeTen(a,b);x.sig=a+'+'+b;return x;}},
+ {id:'c2',name:'二位數加法進位（積木）',icon:'🧱',gen:function(){var x=genAdd2(true);var s=sceneBlocksAdd(x[0],x[1]);s.sig=x[0]+'+'+x[1];return s;}},
+ {id:'c3',name:'直式加法：二次進位',icon:'📐',gen:function(){var x=genAdd3(2);var s=sceneColAdd(x[0],x[1]);s.sig=x[0]+'+'+x[1];return s;}},
+ {id:'c4',name:'破十退位（20 以內）',icon:'🍪',gen:function(){var x=genBreak();var s=sceneBreakTen(x[0],x[1]);s.sig=x[0]+'-'+x[1];return s;}},
+ {id:'c5',name:'二位數減法退位（積木）',icon:'🧱',gen:function(){var x=genSub2(true);var s=sceneBlocksSub(x[0],x[1]);s.sig=x[0]+'-'+x[1];return s;}},
+ {id:'c6',name:'直式減法：一次退位',icon:'📐',gen:function(){var x=genSub3(1);var s=sceneColSub(x[0],x[1]);s.sig=x[0]+'-'+x[1];return s;}}
 ];
 var CBY={};CAMP.forEach(function(c){CBY[c.id]=c;});var NCAMP=3;
 function campList(){var m=M();
@@ -393,43 +410,60 @@ function campList(){var m=M();
   API.h(html);document.querySelectorAll('[data-camp]').forEach(function(b){b.onclick=function(){startCamp(b.getAttribute('data-camp'));};});$('back').onclick=hub;}
 function campBtn(c,m){var r=m.camp[c.id]||{};return '<div class="card mission starc"><div><b>'+c.icon+' '+c.name+'</b><div>'+API.starStr(r.stars||0)+'</div><div class="muted">每次 '+NCAMP+' 題'+(r.plays?'・練過 '+r.plays+' 次':'')+'</div></div><button class="btn" data-camp="'+c.id+'">開始 💪</button></div>';}
 var camp=null;
-function startCamp(id){camp={c:CBY[id],n:0,mist:0,steps:0};campQ();}
+function startCamp(id){var av=window.ZYP.used('camp:'+id);camp={c:CBY[id],n:0,mist:0,steps:0,missSteps:0,av:av,sigs:[]};campQ();}
 function campQ(){
-  var sc=camp.c.gen();camp.sc=sc;
-  API.h('<div class="muted">🏋️ '+camp.c.name+'　第 '+(camp.n+1)+' / '+NCAMP+' 題</div><div class="progress"><i style="width:'+(camp.n/NCAMP*100)+'%"></i></div><div id="player"></div><div class="feedback" id="fb"></div><div id="askw"></div><div id="next-wrap"></div><button class="btn ghost" id="quit">⬅ 回特訓營</button>');
-  var p=new Player($('player'),sc,{guided:true});$('quit').onclick=function(){stopSay();campList();};
+  var sc=null,g=0;do{sc=camp.c.gen();g++;}while(g<40&&(camp.av[sc.sig]||camp.sigs.indexOf(sc.sig)>=0));camp.sc=sc;camp.sigs.push(sc.sig);
+  API.h('<div class="muted">🏋️ '+camp.c.name+'　第 '+(camp.n+1)+' / '+NCAMP+' 題</div><div class="progress"><i style="width:'+(camp.n/NCAMP*100)+'%"></i></div><div id="player"></div><div class="feedback" id="fb"></div><div id="qtimer"></div><div id="askw"></div><div id="next-wrap"></div><button class="btn ghost" id="quit">⬅ 回闖關地圖</button>');
+  var p=new Player($('player'),sc,{guided:true});$('quit').onclick=function(){stopSay();hub();};
   function step(){
-    if(p.k>=sc.steps.length){$('askw').innerHTML='';$('fb').className='feedback ok';$('fb').innerHTML='這題完成！🎉';
+    if(!$('askw'))return;
+    if(p.k>=sc.steps.length){$('askw').innerHTML='';$('qtimer').innerHTML='';$('qtimer').className='';$('fb').className='feedback ok';$('fb').innerHTML='這題完成！🎉';
       camp.n++;$('next-wrap').innerHTML='<button class="btn" id="next">'+(camp.n>=NCAMP?'看成績 🏆':'下一題 ➡')+'</button>';$('next').onclick=function(){stopSay();if(camp.n>=NCAMP)campDone();else campQ();};return;}
     var s=sc.steps[p.k];
     if(!s.ask){p.next();setTimeout(step,s.run?1500:900);return;}
-    camp.steps++;var tries=0;
+    camp.steps++;var tries=0,over=false;
     $('askw').innerHTML='<div class="askq">'+API.esc(s.ask.q).replace('？','<span class="ansbox" id="ab">?</span>')+'</div>'+padHTML();
+    var tm=window.ZYP.timer('input',$('qtimer'),function(){if(over)return;over=true;if(tries===0)camp.missSteps++;camp.mist++;var fb=$('fb');fb.className='feedback bad';fb.innerHTML='⏰ 超過 '+tm.sec+' 秒，算「不會」：答案是 <b>'+s.ask.a+'</b>，看動畫 👀';$('askw').innerHTML='';p.next();setTimeout(step,2400);});
+    setTimeout(function(){tm.start();},s.ask.q.length>10?1500:900);
     bindPad($('askw'),4,function(v){var ab=$('ab');if(ab)ab.textContent=v===''?'?':v;},function(v,clear){
-      var fb=$('fb');
-      if(v===s.ask.a){fb.className='feedback ok';fb.innerHTML=rnd(['對！','好棒！','沒錯！'])+' ✅';$('askw').innerHTML='';p.next();setTimeout(step,1700);return;}
-      tries++;camp.mist++;fb.className='feedback bad';
+      if(over)return;var fb=$('fb');
+      if(v===s.ask.a){over=true;tm.stop();fb.className='feedback ok';fb.innerHTML=rnd(['對！','好棒！','沒錯！'])+' ✅';$('askw').innerHTML='';p.next();setTimeout(step,1700);return;}
+      if(tries===0)camp.missSteps++;tries++;camp.mist++;tm.stop();fb.className='feedback bad';
       if(tries<2){fb.innerHTML='再想想看 💪';say(['m_try']);clear();}
-      else{fb.innerHTML='答案是 <b>'+s.ask.a+'</b>，看動畫 👀';$('askw').innerHTML='';p.next();setTimeout(step,2200);}});}
+      else{over=true;fb.innerHTML='答案是 <b>'+s.ask.a+'</b>，看動畫 👀';$('askw').innerHTML='';p.next();setTimeout(step,2200);}});}
   setTimeout(function(){p.next();setTimeout(step,1400);},300);}
 function campDone(){var m=M();var r=m.camp[camp.c.id]||(m.camp[camp.c.id]={stars:0,plays:0,mist:0,steps:0});r.plays++;r.mist+=camp.mist;r.steps+=camp.steps;
-  var stars=camp.mist===0?3:camp.mist<=2?2:1;if(stars>r.stars)r.stars=stars;
-  m.log.push({date:new Date().toISOString(),lv:camp.c.id,camp:1,score:camp.steps-Math.min(camp.steps,camp.mist),total:camp.steps,secs:0,wrong:[]});if(m.log.length>60)m.log=m.log.slice(-60);API.save();API.hud();
-  API.h('<div class="big-result">'+(stars===3?'🏆':'🌟')+'</div><h1>特訓完成！</h1><p class="sub" style="font-size:22px">'+camp.steps+' 個步驟，答錯 '+camp.mist+' 次<br>'+API.starStr(stars)+'</p><button class="btn" id="again">🔁 再練一次</button><button class="btn blue" id="back">⬅ 回特訓營</button>');
-  say([stars===3?'m_done':'m_done2']);var id=camp.c.id;
-  if(window.ZYReward)window.ZYReward.earn({src:'數學',key:'camp:'+id,title:'特訓營：'+(camp.c.name||id),perfect:camp.mist===0,regroup:camp.mist<camp.steps});$('again').onclick=function(){startCamp(id);};$('back').onclick=campList;}
+  var good=camp.steps-camp.missSteps;var pass=good>=window.ZYP.passNeed(camp.steps);
+  var stars=camp.mist===0?3:pass?2:1;if(stars>r.stars)r.stars=stars;
+  m.log.push({date:new Date().toISOString(),lv:camp.c.id,camp:1,score:good,total:camp.steps,secs:0,wrong:[]});if(m.log.length>60)m.log=m.log.slice(-60);API.save();API.hud();
+  API.h('<div class="big-result">'+(camp.mist===0?'🏆':pass?'🌟':'🚀')+'</div><h1>'+(pass?'特訓過關！':'特訓完成，再練一次會更好！')+'</h1><p class="sub" style="font-size:22px">'+camp.steps+' 個步驟，第一次就算對 '+good+' 個</p><div id="runres"></div><div id="res-btns"></div>');
+  say([pass?'m_done':'m_done2']);var id=camp.c.id;
+  var res=window.ZYP.clear('camp:'+id,{first:good,base:camp.steps,perfect:camp.mist===0,used:camp.sigs,regroup:good>0,title:'特訓營：'+(camp.c.name||id),src:'數學',into:$('runres')});
+  $('runres').insertAdjacentHTML('afterbegin',window.ZYP.resultHTML(res,{kind:'input'}));
+  var nx=res.got?nextNode('camp:'+id):null;
+  $('res-btns').innerHTML=(nx?'<button class="btn green" id="nextn">下一關：'+API.esc(nx.title)+' ➡</button>':'')+'<button class="btn" id="again">🚀 再闖一次（換新題）</button><button class="btn blue" id="back">⬅ 回闖關地圖</button>';
+  if(nx)$('nextn').onclick=function(){openNode(nx);};
+  $('again').onclick=function(){startCamp(id);};$('back').onclick=hub;}
 
-// ---------- 數學星系首頁 ----------
+// ---------- 數學星系首頁：由下往上的闖關地圖 ----------
+var CHAIN=['L_add','m1','L_ten','m2','L_sub','m3','m4','L_make10','m5','c1','L_break10','m6','c4','m7','L_blkadd','c2','L_blksub','c5','m8','m9','m10','L_coladd','c3','m11','L_colsub','c6','m12','m13'];
+function nodeKey(id){return LBY[id]?'L:'+id:CBY[id]?'camp:'+id:'math:'+id;}
+function runPlain(key){var x=window.ZYP.peek(key);return (x.stars?'🌟×'+x.stars+'・':'')+'闖關 '+x.runs+'/3';}
+function nodes(){var m=M();return CHAIN.map(function(id){
+  if(LBY[id]){var l=LBY[id];return {id:id,kind:'L',key:'L:'+id,done:!!m.lesson[id],icon:'🎬',title:l.name,sub:'動畫教學・'+l.grade+'・看完就過關'+(m.lesson[id]?'（看過 '+m.lesson[id]+' 次）':''),color:l.g==='add'?'linear-gradient(135deg,#ff9f43,#ee5253)':'linear-gradient(135deg,#48dbfb,#0abde3)'};}
+  if(CBY[id]){var c=CBY[id];return {id:id,kind:'c',key:'camp:'+id,done:window.ZYP.done('camp:'+id),icon:'🏋️',title:'特訓：'+c.name,sub:'一步一步跟著算・'+NCAMP+' 題・'+runPlain('camp:'+id),color:'linear-gradient(135deg,#feca57,#ff6b6b)'};}
+  var lv=LVBY[id];var n=LEVELS.indexOf(lv)+1;return {id:id,kind:'m',key:'math:'+id,done:window.ZYP.done('math:'+id),icon:lv.star?'⭐':'🧠',title:'心算第 '+n+' 關：'+lv.name,sub:lv.grade+'・10 題・'+runPlain('math:'+id),color:'linear-gradient(135deg,#a29bfe,#6c5ce7)'};});}
+function nextNode(key){var ns=nodes();var i=ns.map(function(n){return n.key;}).indexOf(key);var nx=ns[i+1];if(!nx)return null;return window.ZYP.isOpen(ns,i+1)?nx:null;}
+function openNode(it){if(it.kind==='L')lessonPage(it.id);else if(it.kind==='c')startCamp(it.id);else startLevel(it.id);}
 function hub(){stopSay();API.hud();
-  var m=M();
-  var html='<div class="ship">🪐</div><h1>數學星系</h1><p class="sub">加法、減法，一起變成心算高手！</p><div class="planet-grid">';
-  html+='<button class="planet" id="go-add" style="background:linear-gradient(135deg,#ff9f43,#ee5253)"><div class="orb">＋</div><div class="pname">加法教室</div><div class="pstars">動畫教學・湊十・進位</div></button>';
-  html+='<button class="planet" id="go-sub" style="background:linear-gradient(135deg,#48dbfb,#0abde3)"><div class="orb">－</div><div class="pname">減法教室</div><div class="pstars">動畫教學・破十・退位</div></button>';
-  html+='<button class="planet wide starl" id="go-camp" style="background:linear-gradient(135deg,#feca57,#ff6b6b)"><div class="orb" style="font-size:34px">⭐</div><div class="pname">進位退位特訓營</div><div class="pstars">一步一步跟著算・小朋友最容易錯的地方</div></button>';
-  html+='<button class="planet wide" id="go-prac" style="background:linear-gradient(135deg,#a29bfe,#6c5ce7)"><div class="orb" style="font-size:34px">🧠</div><div class="pname">心算練習場（13 關）</div><div class="pstars">⭐ '+starsTotal()+' / '+(LEVELS.length*3)+'</div></button></div>';
+  var ns=nodes();var nd=ns.filter(function(n){return n.done;}).length;
+  var html='<div class="muted">🏠 太空基地</div><div class="ship">🔢</div><h1>數學星系</h1><p class="sub">由下往上：看動畫學方法 → 心算練習 → 進位退位特訓（完成 '+nd+' / '+ns.length+'）</p>';
+  html+=window.ZYP.ruleHTML();
+  html+='<div class="card mtip">🧠 心算小撇步：<b>湊十</b>（8＋5＝8＋2＋3）、<b>破十</b>（13－5＝10－5＋3）、<b>拆數</b>（26＋17＝26＋10＋7）、<b>整十數</b>（30＋40＝7 個十）</div>';
+  var mp=window.ZYP.mapHTML(ns);html+=mp.html;
   html+='<p class="muted center" style="margin-top:14px">依教育部十二年國教數學課綱：一年級 20 以內加減、合十拆十、二位數加減；二年級直式（加法到二次進位、減法一次退位）</p>';
   html+='<button class="btn ghost" id="back">⬅ 回太空基地</button>';
-  API.h(html);$('go-add').onclick=function(){classroom('add');};$('go-sub').onclick=function(){classroom('sub');};$('go-camp').onclick=campList;$('go-prac').onclick=practiceList;$('back').onclick=API.back;}
+  API.h(html);window.ZYP.bindMap(document,ns,mp.sts,openNode);$('back').onclick=API.back;}
 function starsTotal(){var m=M(),n=0;for(var k in m.lv)n+=m.lv[k].stars||0;return n;}
 function campStars(){var m=M(),n=0;for(var k in m.camp)n+=m.camp[k].stars||0;return n;}
 
@@ -450,6 +484,6 @@ function parentsCard(){var m=M();
 function bindParents(){var b=$('test-voice-m');if(b)b.onclick=function(){sayQ(8,'+',5);setTimeout(function(){say(numIds(205),function(){setTimeout(function(){say(numIds(318));},300);});},2600);};}
 
 window.ZYMath={init:function(api){API=api;},_start:function(id){startLevel(id);},get _sess(){return sess;},open:hub,parentsCard:parentsCard,bindParents:bindParents,totalStars:function(){return starsTotal()+campStars();},
-  badges:function(){var m=M(),n=0;LEVELS.forEach(function(l){if((m.lv[l.id]||{}).stars===3)n++;});return n;},
+  badges:function(){return LEVELS.filter(function(l){return window.ZYP.done('math:'+l.id);}).length;},
   _t:{cn:cn,numIds:numIds,wordsOf:wordsOf,LEVELS:LEVELS,carries:carries,borrows:borrows,sceneFor:sceneFor,genAdd3:genAdd3,genSub3:genSub3,makeSet:makeSet,Player:Player,lessonPage:lessonPage,startLevel:startLevel,startCamp:startCamp,practiceList:practiceList,campList:campList,classroom:classroom,TXT:TXT,get sess(){return sess;},get camp(){return camp;}}};
 })();
