@@ -61,7 +61,7 @@ function ruleHTML(){var a=secs('choice'),b=secs('input');
    '<li>🔒 要先完成下面的關卡，上面的才會打開</li></ul></div>';}
 
 // ---------- 解鎖鏈與闖關地圖（由下往上） ----------
-function unlockedAll(){return !!(S().unlock&&S().unlock.all);}
+function unlockedAll(){return !!((window.ZYDad&&window.ZYDad.on())||(S().unlock&&S().unlock.all));}
 function chain(items){var free=unlockedAll();var nextSet=false;
   return items.map(function(it){var st;if(it.done)st='done';else if(!nextSet){st='next';nextSet=true;}else st=free?'open':'locked';return st;});}
 function mapHTML(items,opt){opt=opt||{};var sts=chain(items);

@@ -69,7 +69,8 @@ function load(){try{S=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){S={};}
     if(S.settings.rate!==undefined){S.settings.speed=S.settings.rate<=0.6?0.8:S.settings.rate>=1?1.15:1;delete S.settings.rate;}
     S.ver=2;}
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){if(window.ZYDad&&window.ZYDad.on())return; // 爸爸測試模式：不寫入
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 load();
 // ---------- no-repeat queues（抽完整輪才重洗） ----------
 function qState(key,ids){var q=S.q[key];
@@ -428,6 +429,7 @@ function bossResult(){
 }
 // ---------- parents ----------
 function parents(){
+  if(window.ZYDad&&window.ZYDad.on()){h(window.ZYDad.parentsBlocked());document.getElementById('dad-exit2').onclick=function(){window.ZYDad.exit('');};document.getElementById('back').onclick=base;return;}
   var html='<h1>👨‍👦 家長專區</h1>';
   if(window.ZYReward)html+=window.ZYReward.parentsCard();
   html+=window.ZYP.deviceCard();
@@ -490,5 +492,6 @@ window.ZYP.init(API2);
 if(window.ZYRad)window.ZYRad.init(Object.assign({back:chinese},API2));
 if(window.ZYMath)window.ZYMath.init(Object.assign({back:base},API2));
 if(window.ZYReward)window.ZYReward.init(Object.assign({base:base},API2));
+if(window.ZYDad)window.ZYDad.init(Object.assign({base:base},API2));
 base();
 })();

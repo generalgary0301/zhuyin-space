@@ -12,6 +12,8 @@ function today(d){d=d?new Date(d):new Date();return d.getFullYear()+'-'+('0'+(d.
 function R(){var s=S();var r=s.reward;if(!r)r=s.reward={};
   if(r.bal===undefined)r.bal=0;if(r.earned===undefined)r.earned=0;if(!r.pin)r.pin='0000';if(r.pinChanged===undefined)r.pinChanged=false;
   if(!r.cost)r.cost=5;if(!r.min)r.min=15;if(!r.cap)r.cap=2;r.hist=r.hist||[];r.log=r.log||[];r.day=r.day||{};
+  if(!r.dadPin)r.dadPin='1205';
+  if(!r.pin1205){if(!r.pinChanged&&r.pin==='0000'){r.pin='1205';r.pinChanged=true;}r.pin1205=1;} // t48u：預設家長密碼改為爸爸指定的密碼（已自訂者保留）
   if(!r.alts)r.alts=[{id:'a1',emoji:'🎲',name:'跟爸爸玩桌遊',cost:5},{id:'a2',emoji:'📖',name:'多聽一個睡前故事',cost:5},{id:'a3',emoji:'🍽️',name:'週末選晚餐',cost:5}];
   if(!r.reset9){r.bal=0;r.earned=0;r.log=[];r.day={};r.reset9=new Date().toISOString();try{API.save();}catch(e){}} // 2026-11 新規則上線：存摺歸零一次（設定與密碼保留）
   return r;}
@@ -57,9 +59,11 @@ function pop(n,parts){var old=$('rw-pop');if(old)old.remove();var r=R();
 function hudBank(){var e=$('hud-bank');if(e)e.textContent=R().bal;}
 
 // ---------- 家長密碼 ----------
-function pinPad(title,onOk,onCancel){var d=document.createElement('div');d.className='rw-pop';d.id='rw-pin';var v='';
+function DAD(){return !!(window.ZYDad&&window.ZYDad.on());}
+function pinPad(title,onOk,onCancel,o){o=o||{};if(DAD()&&!o.force){onOk();return;} // 爸爸測試模式已驗證過
+  var chk=o.check||function(v){return v===R().pin;};var d=document.createElement('div');d.className='rw-pop';d.id='rw-pin';var v='';
   var keys=['1','2','3','4','5','6','7','8','9','✖','0','⌫'];
-  d.innerHTML='<div class="rw-pop-box"><div style="font-size:40px">🔒</div><h2>'+esc(title)+'</h2><p class="muted">請爸爸或媽媽輸入 4 位數家長密碼</p><div class="rw-pin-dots" id="rw-dots"></div><div class="feedback" id="rw-pin-fb"></div><div class="rw-pin-keys">'+keys.map(function(k){return '<button class="key'+(k==='✖'||k==='⌫'?' fn':'')+'" data-k="'+k+'">'+k+'</button>';}).join('')+'</div></div>';
+  d.innerHTML='<div class="rw-pop-box"><div style="font-size:40px">🔒</div><h2>'+esc(title)+'</h2><p class="muted">'+esc(o.sub||'請爸爸或媽媽輸入 4 位數家長密碼')+'</p><div class="rw-pin-dots" id="rw-dots"></div><div class="feedback" id="rw-pin-fb"></div><div class="rw-pin-keys">'+keys.map(function(k){return '<button class="key'+(k==='✖'||k==='⌫'?' fn':'')+'" data-k="'+k+'">'+k+'</button>';}).join('')+'</div></div>';
   document.body.appendChild(d);
   function draw(){$('rw-dots').innerHTML=[0,1,2,3].map(function(i){return '<span class="'+(i<v.length?'on':'')+'"></span>';}).join('');}
   draw();
@@ -67,7 +71,7 @@ function pinPad(title,onOk,onCancel){var d=document.createElement('div');d.class
     if(k==='✖'){d.remove();if(onCancel)onCancel();return;}
     if(k==='⌫'){v=v.slice(0,-1);draw();return;}
     if(v.length<4)v+=k;draw();
-    if(v.length===4){if(v===R().pin){d.remove();onOk();}else{var fb=$('rw-pin-fb');fb.className='feedback bad';fb.textContent='密碼不對，再試一次';d.querySelector('.rw-pop-box').classList.add('shake');setTimeout(function(){var bx=d.querySelector('.rw-pop-box');if(bx)bx.classList.remove('shake');},500);v='';setTimeout(draw,250);}}};});}
+    if(v.length===4){if(chk(v)){d.remove();onOk();}else{var fb=$('rw-pin-fb');fb.className='feedback bad';fb.textContent='密碼不對，再試一次';d.querySelector('.rw-pop-box').classList.add('shake');setTimeout(function(){var bx=d.querySelector('.rw-pop-box');if(bx)bx.classList.remove('shake');},500);v='';setTimeout(draw,250);}}};});}
 
 // ---------- 存摺頁 ----------
 function bank(){var p=$('rw-pop');if(p)p.remove();API.hud();var r=R();var used=usedToday();var left=Math.max(0,r.cap-used);
@@ -75,7 +79,7 @@ function bank(){var p=$('rw-pop');if(p)p.remove();API.hud();var r=R();var used=u
    '<div class="card center rw-balance"><div class="muted">存摺裡有</div><div class="rw-big">⭐ '+r.bal+'</div><div class="muted">累計存了 '+r.earned+' 顆・已兌換 '+r.hist.length+' 次</div>'+progressHTML()+'</div>'+
    timerBanner()+
    '<h2 class="galaxy">🎁 兌換獎勵</h2><p class="muted" style="margin:-4px 0 8px">今天還可以兌換 <b>'+left+'</b> 次（每天最多 '+r.cap+' 次）・兌換時要請爸爸媽媽輸入家長密碼</p><div class="rw-list">';
-  rewards().forEach(function(x){var can=r.bal>=x.cost&&left>0;
+  rewards().forEach(function(x){var can=DAD()||(r.bal>=x.cost&&left>0);
     html+='<div class="rw-item'+(x.id==='dora'?' main':'')+'"><span class="rw-emo">'+x.emoji+'</span><div class="rw-info"><b>'+esc(x.name)+'</b><div class="muted">需要 ⭐ '+x.cost+(x.min?'・計時 '+x.min+' 分鐘':'')+'</div></div><button class="btn '+(can?'gold':'ghost')+' rw-go" data-rw="'+x.id+'"'+(can?'':' disabled')+'>'+(can?'兌換':left<=0?'今天已滿':'還差 '+(x.cost-r.bal))+'</button></div>';});
   html+='</div><div class="card"><h2>⭐ 怎麼存星星？</h2><ul class="list"><li><div>同一關<b>過關 3 次</b>（3 次題目都不一樣；每次第一次作答答對 8 成以上，每題要在時間內作答）</div><b>+1</b></li><li><div>3 次都全部答對</div><b>+1</b></li><li><div>數學：有答對進位或退位的題目</div><b>+1</b></li><li><div>筆順：一個符號 3 關（描一描、虛線寫、自己寫）都過</div><b>+1</b></li></ul></div>';
   html+='<button class="btn ghost" id="back">⬅ 回太空基地</button>';
@@ -85,11 +89,12 @@ function bank(){var p=$('rw-pop');if(p)p.remove();API.hud();var r=R();var used=u
 function fmt(t){var d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function redeem(id){var x=rewards().filter(function(z){return z.id===id;})[0];if(!x)return;
   pinPad('兌換「'+x.name+'」',function(){var r=R();
-    if(usedToday()>=r.cap){API.toast('今天已經兌換 '+r.cap+' 次囉，明天再來！');return bank();}
-    if(r.bal<x.cost){API.toast('星星不夠喔');return bank();}
-    if(x.min&&r.timer){API.toast('還有一張計時中的兌換券');return ticket(r.timer.hid);}
-    r.bal-=x.cost;var no=(r.seq=(r.seq||0)+1);
-    var h={no:no,t:new Date().toISOString(),id:x.id,emoji:x.emoji,name:x.name,cost:x.cost,min:x.min||0,yt:!!x.yt,done:!x.min};
+    var dad=DAD();
+    if(!dad&&usedToday()>=r.cap){API.toast('今天已經兌換 '+r.cap+' 次囉，明天再來！');return bank();}
+    if(!dad&&r.bal<x.cost){API.toast('星星不夠喔');return bank();}
+    if(!dad&&x.min&&r.timer){API.toast('還有一張計時中的兌換券');return ticket(r.timer.hid);}
+    if(!dad)r.bal-=x.cost;else API.toast('🔑 測試兌換：不扣星星、不算次數');var no=(r.seq=(r.seq||0)+1);
+    var h={no:no,t:new Date().toISOString(),id:x.id,emoji:x.emoji,name:(dad?'【測試】':'')+x.name,cost:dad?0:x.cost,min:x.min||0,yt:!!x.yt,done:!x.min};
     r.hist.push(h);if(r.hist.length>200)r.hist=r.hist.slice(-200);
     if(x.min)r.timer={hid:no,total:x.min*60000,remain:x.min*60000,endAt:null,warned:false};
     API.save();hudBank();sparkle();ticket(no);});}
@@ -249,6 +254,7 @@ function parentsCard(){var r=R();var unlocked=Date.now()<unlockUntil;
     '<h3>🎁 其他獎勵</h3><div id="rw-alts">'+r.alts.map(function(a,i){return '<div class="rw-alt" data-i="'+i+'"><input class="emo" value="'+esc(a.emoji||'🎁')+'" maxlength="4"><input class="nm" value="'+esc(a.name)+'" maxlength="30"><input class="ct" type="number" min="1" max="50" value="'+(a.cost||r.cost)+'"><span>⭐</span><button class="mini" data-del="'+i+'">🗑</button></div>';}).join('')+'</div>'+
     '<button class="btn ghost" id="rw-add">➕ 新增獎勵</button><button class="btn gold" id="rw-save">💾 儲存設定</button>'+
     '<h3>🔑 更改家長密碼</h3><label>新密碼（4 位數字） <input type="password" inputmode="numeric" maxlength="4" id="rw-p1"></label><label>再輸入一次 <input type="password" inputmode="numeric" maxlength="4" id="rw-p2"></label><button class="btn" id="rw-pin">更改密碼</button>'+
+    '<h3>🔑 更改爸爸模式密碼</h3><p class="muted" style="margin:0 0 6px;font-size:14px">畫面上方「🔑 爸爸」按鈕用的密碼（爸爸測試模式：全部解鎖、不計成績）。</p><label>新密碼（4 位數字） <input type="password" inputmode="numeric" maxlength="4" id="rw-d1"></label><label>再輸入一次 <input type="password" inputmode="numeric" maxlength="4" id="rw-d2"></label><button class="btn" id="rw-dpin">更改爸爸模式密碼</button>'+
     vidsHTML()+
     '<h3>🛠️ 手動調整星星</h3><div class="rw-adj"><button class="mini" data-adj="-1">－1</button><button class="mini" data-adj="1">＋1</button></div></div>';}
   html+='<h3 style="margin:12px 0 4px">🎟️ 兌換紀錄</h3>'+(r.hist.length?'<ul class="list">'+r.hist.slice().reverse().slice(0,20).map(function(h){return '<li><div>'+h.emoji+' '+esc(h.name)+'<div class="muted">'+fmt(h.t)+'・No.'+('000'+h.no).slice(-4)+(h.min?(h.done?(h.early?'・提早結束':'・時間到'):'・計時中/未開始'):'')+'</div></div><b>－'+h.cost+' ⭐</b></li>';}).join('')+'</ul>':'<p class="muted">還沒有兌換紀錄</p>');
@@ -270,6 +276,7 @@ function bindParents(){var r=R();
   var ad=$('rw-add');if(ad)ad.onclick=function(){var w=$('rw-alts');var d=document.createElement('div');d.className='rw-alt';d.innerHTML='<input class="emo" value="🎁" maxlength="4"><input class="nm" placeholder="獎勵名稱" maxlength="30"><input class="ct" type="number" min="1" max="50" value="'+r.cost+'"><span>⭐</span><button class="mini" data-del="x">🗑</button>';w.appendChild(d);d.querySelector('[data-del]').onclick=function(){d.remove();};d.querySelector('.nm').focus();};
   document.querySelectorAll('#rw-alts [data-del]').forEach(function(b){b.onclick=function(){b.parentNode.remove();};});
   var pn=$('rw-pin');if(pn)pn.onclick=function(){var a=$('rw-p1').value,b=$('rw-p2').value;if(!/^\d{4}$/.test(a)){API.toast('請輸入 4 位數字');return;}if(a!==b){API.toast('兩次輸入不一樣');return;}r.pin=a;r.pinChanged=true;API.save();API.toast('🔑 密碼已更改');rerender();};
+  var dp=$('rw-dpin');if(dp)dp.onclick=function(){var a=$('rw-d1').value,b=$('rw-d2').value;if(!/^\d{4}$/.test(a)){API.toast('請輸入 4 位數字');return;}if(a!==b){API.toast('兩次輸入不一樣');return;}r.dadPin=a;API.save();API.toast('🔑 爸爸模式密碼已更改');rerender();};
   document.querySelectorAll('[data-vdel]').forEach(function(b){b.onclick=function(){var r=V();r.vids.splice(+b.getAttribute('data-vdel'),1);r.vpos={i:0,t:0};API.save();rerender();};});
   var va=$('rw-vaddb');if(va)va.onclick=function(){var id=parseVid($('rw-vurl').value);if(!id){API.toast('看不懂這個網址，請貼 YouTube 影片網址');return;}var r=V();if(r.vids.some(function(v){return v.id===id;})){API.toast('清單裡已經有了');return;}
     var add=function(t){r.vids.push({id:id,t:t||id});delete r.vbad[id];API.save();rerender();API.toast('✅ 已加入');};
@@ -278,5 +285,5 @@ function bindParents(){var r=R();
   var vd=$('rw-vdef');if(vd)vd.onclick=function(){if(!confirm('恢復成預設的影片清單？'))return;var r=V();r.vids=DEF_VIDS.slice();r.vbad={};r.vpos={i:0,t:0};API.save();rerender();};
   document.querySelectorAll('[data-adj]').forEach(function(b){b.onclick=function(){r.bal=Math.max(0,r.bal+parseInt(b.getAttribute('data-adj'),10));API.save();hudBank();rerender();};});}
 
-window.ZYReward={_pin:function(t,f){pinPad(t,f);},init:function(api){API=api;V();hudBank();setTimeout(tick,500);},theater:theater,_p:function(){return player;},_vids:goodVids,earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
+window.ZYReward={_pin:function(t,f,c,o){pinPad(t,f,c,o);},init:function(api){API=api;V();hudBank();setTimeout(tick,500);},theater:theater,_p:function(){return player;},_vids:goodVids,earn:earn,bank:bank,ticket:ticket,homeCard:homeCard,bindHome:bindHome,parentsCard:parentsCard,bindParents:bindParents,hudBank:hudBank,R:R,_finish:finishTimer,_today:today};
 })();
