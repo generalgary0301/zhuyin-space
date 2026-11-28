@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>原型 B・互動繪本遊戲卡</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:#3b2a1a;background:#fff8e7;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+body{background:linear-gradient(#bde7ff 0,#e9f7ff 260px,#fff8e7 260px)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#ffffffd9;backdrop-filter:blur(6px);box-shadow:0 2px 10px #0001}
+.pill{background:#fff;border:3px solid #ffd43b;border-radius:999px;padding:4px 14px;font-size:20px;font-weight:900}
+#starCount{display:inline-block;transition:transform .2s}.pop{transform:scale(1.35)!important}
+.btn{border:none;border-radius:22px;font-size:22px;font-weight:900;padding:14px 22px;color:#fff;background:#40c057;box-shadow:0 6px 0 #2b8a3e}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #2b8a3e}
+.btn.ghost{background:#fff;color:#555;box-shadow:0 4px 0 #ddd}
+.screen{display:none;padding:12px 14px 40px;max-width:760px;margin:0 auto}
+.screen.on{display:block}
+h1{font-size:30px;text-align:center;margin:6px 0}
+.muted{color:#7a6a5a;font-size:16px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:10px 0 14px}
+.tab{border:none;font-size:22px;font-weight:900;padding:10px 22px;border-radius:18px;background:#fff;color:#888;box-shadow:0 4px 0 #ddd}
+.tab.on{background:#ff922b;color:#fff;box-shadow:0 4px 0 #d9480f}
+.levels{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (min-width:700px){.levels{grid-template-columns:repeat(3,1fr)}}
+.lv{position:relative;border:none;border-radius:26px;padding:16px 10px 12px;background:#fff;box-shadow:0 7px 0 #e8d9b8;text-align:center;font-family:inherit;color:inherit}
+.lv .n{position:absolute;left:10px;top:8px;font-size:18px;font-weight:900;color:#fff;background:#ff922b;border-radius:50%;width:34px;height:34px;line-height:34px}
+.lv .e{font-size:58px}.lv .t{font-size:20px;font-weight:900;margin-top:4px}.lv .s{font-size:22px;margin-top:4px;letter-spacing:2px}
+.lv.locked{filter:grayscale(1);opacity:.55}.lv.locked::after{content:'🔒';position:absolute;right:10px;top:6px;font-size:28px}
+.lv.next{outline:5px solid #ffd43b;animation:bob 1.6s ease-in-out infinite}.lv.next::before{content:'👉 下一關';position:absolute;right:8px;top:-14px;background:#ffd43b;border-radius:10px;padding:2px 8px;font-size:15px;font-weight:900}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.shake{animation:shake .4s}@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#333e;color:#fff;padding:12px 18px;border-radius:16px;font-size:19px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;text-align:center;max-width:90vw}
+.toast.on{opacity:1}
+.steps{display:flex;gap:6px;justify-content:center;margin:4px 0 10px}.steps i{width:34px;height:10px;border-radius:6px;background:#e9dcc0}.steps i.on{background:#40c057}
+.guide{display:flex;align-items:center;gap:10px;background:#fff;border-radius:22px;padding:10px 14px;font-size:20px;font-weight:800;box-shadow:0 4px 0 #eadfc8;margin-bottom:12px}
+.guide .who{font-size:44px}
+/* 翻牌 */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:6px 0 16px}
+@media (min-width:700px){.cards{grid-template-columns:repeat(4,1fr)}}
+.fc{position:relative;aspect-ratio:3/3.4;perspective:800px;z-index:3}
+.fc .in{position:absolute;inset:0;transition:transform .45s;transform-style:preserve-3d}
+.fc.open .in{transform:rotateY(180deg)}
+.fc .f,.fc .b{position:absolute;inset:0;border-radius:24px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 7px 0 #0002}
+.fc .f{background:repeating-linear-gradient(45deg,#ff922b 0 16px,#ffa94d 16px 32px);font-size:60px}
+.fc .b{background:#fff;transform:rotateY(180deg)}
+.fc .b .e{font-size:66px}.fc .b .w{font-size:36px;font-weight:900;letter-spacing:3px}
+.hl{color:#e8590c;border-bottom:5px solid #ffa94d}
+.fc.dragging{z-index:30}.fc.dragging .b{box-shadow:0 18px 30px #0004}
+.fc.done{visibility:hidden}
+.baskets{display:flex;gap:14px}
+.bk{flex:1;min-height:150px;border-radius:28px;border:5px dashed #ffa94d;background:#fff4e6;text-align:center;padding:8px;transition:all .2s}
+.bk .sym{font-size:70px;font-weight:900;line-height:1.1}
+.bk .got{font-size:34px;min-height:40px}
+.bk.over{background:#ffe8cc;transform:scale(1.05);border-style:solid}
+.bk.bad{animation:shake .4s}
+/* 聽音選圖 */
+.pics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.pic{border:none;border-radius:24px;background:#fff;box-shadow:0 7px 0 #eadfc8;padding:14px 4px;font-family:inherit;color:inherit}
+.pic .e{font-size:64px}.pic .w{font-size:26px;font-weight:900}
+.pic.good{background:#d3f9d8}.pic.bad{background:#ffe3e3;animation:shake .4s}
+.say{border:none;border-radius:999px;background:#339af0;color:#fff;font-size:24px;font-weight:900;padding:14px 26px;box-shadow:0 6px 0 #1864ab}
+/* 積木 */
+.eq{font-size:54px;font-weight:900;text-align:center;margin:4px 0 8px}
+.mat{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.col{background:#fff;border-radius:24px;padding:8px;min-height:250px;box-shadow:0 5px 0 #eadfc8;text-align:center}
+.col h3{margin:0 0 6px;font-size:20px}
+.col.over{outline:5px solid #ffd43b}
+.rods{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.rod{width:22px;height:200px;border-radius:6px;background:repeating-linear-gradient(#4dabf7 0 18px,#1c7ed6 18px 20px);box-shadow:0 3px 0 #1864ab}
+.rod.new{animation:drop .6s}
+@keyframes drop{from{transform:translate(120px,-40px) rotate(90deg)}}
+.cubes{display:grid;grid-template-columns:repeat(5,34px);gap:6px;justify-content:center}
+.cube{width:34px;height:34px;border-radius:7px;background:#ffd43b;box-shadow:inset 0 -4px 0 #f59f00}
+.cube.blue{background:#ff8787;box-shadow:inset 0 -4px 0 #e03131}
+.cube.go{animation:suck .6s forwards}@keyframes suck{to{transform:translate(-140px,0) scale(.3);opacity:0}}
+.supply{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0;padding:10px;background:#ffe3e3;border-radius:22px;min-height:66px}
+.supply .cube{width:48px;height:48px;position:relative;z-index:3}
+.bundle{display:none;margin:10px auto 0}
+.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.ans{border:none;border-radius:22px;font-size:40px;font-weight:900;padding:16px 0;background:#fff;color:#333;box-shadow:0 6px 0 #eadfc8;font-family:inherit}
+.ans.good{background:#d3f9d8}.ans.bad{background:#ffe3e3;animation:shake .4s}
+.hint{text-align:center;font-size:20px;font-weight:800;min-height:30px;margin-top:10px}
+.flyer{position:fixed;font-size:40px;z-index:60;transition:transform .7s cubic-bezier(.3,.7,.4,1),opacity .7s;pointer-events:none}
+.confetti{position:fixed;top:-40px;font-size:30px;z-index:60;animation:fall 2s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+.result{text-align:center;padding-top:24px}.result .big{font-size:110px}.stars3{font-size:60px;letter-spacing:8px}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.info{background:#fff;border-radius:20px;padding:12px 16px;font-size:16px;line-height:1.6;margin-top:16px;box-shadow:0 4px 0 #eadfc8}
+</style></head>
+<body>
+<header><button class="btn ghost" id="home" style="font-size:18px;padding:8px 14px">📚 關卡</button><span class="pill" style="font-size:16px">原型 B・遊戲卡</span><span class="pill">⭐ <span id="starCount">0</span></span></header>
+
+<section class="screen on" id="s-list">
+  <h1>🎒 律恩的遊戲關卡</h1>
+  <div class="tabs"><button class="tab on" data-tab="zh">📖 國語</button><button class="tab" data-tab="ma">🔢 數學</button></div>
+  <div class="levels" id="levels"></div>
+  <div class="info">🔒 關卡依順序打開（原型先開放「ㄓㄗ 分分看」和「積木進位」試玩）。<br>📱 每台裝置各自存檔；⏱ 正式版每題 6 秒、闖 3 次拿 1 顆星，規則沿用現在的網站。<br><a href="../proto-a/" style="color:#e8590c">→ 看原型 A（太空冒險地圖）</a>　<a href="../" style="color:#1971c2">正式網站</a></div>
+</section>
+
+<section class="screen" id="s-zy">
+  <div class="steps" id="zSteps"></div>
+  <div id="zBody"></div>
+  <div class="hint" id="zHint"></div>
+</section>
+
+<section class="screen" id="s-math">
+  <div class="steps" id="mSteps"></div>
+  <div class="guide"><span class="who">🧸</span><span id="mGuide">把紅色積木拖到「個位」！</span></div>
+  <div class="eq" id="mEq"></div>
+  <div class="mat"><div class="col" id="cTens"><h3>十位</h3><div class="rods" id="rods"></div></div><div class="col" id="cOnes"><h3>個位</h3><div class="cubes" id="ones"></div></div></div>
+  <button class="btn bundle" id="bundle">🔗 10 個捆成 1 條十</button>
+  <div class="supply" id="supply"></div>
+  <div class="answers" id="answers"></div>
+  <div class="hint" id="mHint"></div>
+</section>
+
+<section class="screen" id="s-done"><div class="result"><div class="big" id="dBig">🏆</div><h1 id="dTitle">過關！</h1><div class="stars3" id="dStars"></div><p class="muted" id="dSub"></p>
+  <div class="row"><button class="btn" id="dList">📚 回關卡</button><button class="btn ghost" id="dAgain">🔁 再玩一次</button></div></div></section>
+<div class="toast" id="toast"></div>
+<script src="../js/data.js?v=11"></script>
+<script src="../proto-shared/zy.js?v=1"></script>
+<script>
+(function(){
+var Z=window.ZYP2,$=function(id){return document.getElementById(id);};var stars=0,started=false,tab='zh';
+function toast(t){var x=$('toast');x.textContent=t;x.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){x.classList.remove('on');},1800);}
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});window.scrollTo(0,0);}
+function addStar(from){Z.fly(from,$('starCount'),'⭐',function(){stars++;$('starCount').textContent=stars;});}
+function steps(el,n,k){$(el).innerHTML=Array.from({length:n},function(_,i){return '<i class="'+(i<k?'on':'')+'"></i>';}).join('');}
+// ---------- 關卡列表 ----------
+var LV={zh:[{e:'✍️',t:'筆順描一描',st:'done',s:3},{e:'🐷',t:'ㄓㄗ 分分看',st:'next',go:'zy'},{e:'🐢',t:'ㄔㄘ 分分看',st:'locked'},{e:'🦁',t:'ㄕㄙ 分分看',st:'locked'},{e:'📚',t:'部首配對',st:'locked'},{e:'👑',t:'大考驗',st:'locked'}],
+        ma:[{e:'🍎',t:'10 以內加法',st:'done',s:2},{e:'🧱',t:'積木進位',st:'next',go:'math'},{e:'🍪',t:'退位減法',st:'locked'},{e:'🧮',t:'直式加法',st:'locked'}]};
+function list(){var h='';LV[tab].forEach(function(l,i){h+='<button class="lv '+l.st+'" data-i="'+i+'"><span class="n">'+(i+1)+'</span><div class="e">'+l.e+'</div><div class="t">'+l.t+'</div><div class="s">'+(l.st==='done'?'⭐'.repeat(l.s)+'☆'.repeat(3-l.s):l.st==='locked'?'　':'☆☆☆')+'</div></button>';});
+  $('levels').innerHTML=h;document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===tab);b.onclick=function(){tab=b.getAttribute('data-tab');list();};});
+  document.querySelectorAll('.lv').forEach(function(b){b.onclick=function(){if(!started){Z.unlock();started=true;}var l=LV[tab][+b.getAttribute('data-i')];
+    if(l.st==='locked'){b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');toast('🔒 先完成前面的關卡喔！');return;}
+    if(!l.go){toast('✅ 這關已經過關了！');return;}if(l.go==='zy')startZy();else startMath();};});}
+// ---------- 國語：翻牌 → 拖到 ㄓ／ㄗ 籃子 → 聽音選圖 ----------
+var ZW={'ㄓ':['小豬','時鐘','章魚','蠟燭','照片','煮飯','手指','樹枝'],'ㄗ':['嘴巴','足球','洗澡','紫色','鑽石','走路','寫字','帽子']};
+function wordsOf(s){return Z.pairWords(s).filter(function(w){return ZW[s].indexOf(w.word)>=0;});}
+var zCards=[],zLeft=0,zMiss=0,zTotal=0,zRound=0,zListen=[],zli=0;
+function startZy(){zCards=Z.shuffle(Z.pick(wordsOf('ㄓ'),2).concat(Z.pick(wordsOf('ㄗ'),2)));zMiss=0;zTotal=0;zRound=1;show('s-zy');sortRound();}
+function sortRound(){zLeft=zCards.length;steps('zSteps',6,0);
+  var h='<div class="guide"><span class="who">🐰</span><span>點卡片翻開聽聽看，再把卡片拖到對的籃子！</span></div><div class="cards" id="cards">';
+  zCards.forEach(function(w,i){h+='<div class="fc" data-i="'+i+'"><div class="in"><div class="f">❓</div><div class="b"><div class="e">'+w.emoji+'</div><div class="w">'+Z.hl(w)+'</div></div></div></div>';});
+  h+='</div><div class="baskets"><div class="bk" data-s="ㄓ"><div class="sym">ㄓ</div><div class="got"></div></div><div class="bk" data-s="ㄗ"><div class="sym">ㄗ</div><div class="got"></div></div></div>';
+  $('zBody').innerHTML=h;$('zHint').textContent='';
+  document.querySelectorAll('.fc').forEach(function(c){var w=zCards[+c.getAttribute('data-i')];
+    Z.drag(c,function(){return c.classList.contains('open')?[].slice.call(document.querySelectorAll('.bk')):[];},function(bk){return drop(c,w,bk);},function(){c.classList.add('open');Z.play(w.aud);});});}
+function drop(c,w,bk){var s=bk.getAttribute('data-s');zTotal++;
+  if(s===w.sound){c.classList.add('done');c.style.transform='';bk.querySelector('.got').textContent+=w.emoji;bk.classList.add('pop');setTimeout(function(){bk.classList.remove('pop');},400);
+    Z.play('m_ok');addStar(bk);zLeft--;steps('zSteps',6,zCards.length-zLeft);$('zHint').textContent='放對了！「'+w.word[w.t]+'」是 '+w.sound;
+    if(!zLeft)setTimeout(listenRound,1300);return true;}
+  zMiss++;bk.classList.remove('bad');void bk.offsetWidth;bk.classList.add('bad');$('zHint').textContent='🤔 再聽一次「'+w.word+'」，橘色的字是哪個聲音？';setTimeout(function(){Z.play(w.aud);},300);return false;}
+function listenRound(){var pool=wordsOf('ㄓ').concat(wordsOf('ㄗ')).filter(function(w){return zCards.indexOf(w)<0;});zListen=Z.pick(pool,2);zli=0;listenQ();}
+function listenQ(){if(zli>=zListen.length)return done('zy');steps('zSteps',6,4+zli);var w=zListen[zli];
+  var others=Z.pick(wordsOf(w.sound==='ㄓ'?'ㄗ':'ㄓ'),1).concat(Z.pick(wordsOf(w.sound).filter(function(x){return x!==w;}),1));var opts=Z.shuffle([w].concat(others));
+  $('zBody').innerHTML='<div class="guide"><span class="who">🐰</span><span>聽一聽，是哪一張圖？</span></div><div style="text-align:center"><button class="say" id="zSay">🔊 聽題目</button></div><div class="pics">'+
+    opts.map(function(o,i){return '<button class="pic" data-i="'+i+'"><div class="e">'+o.emoji+'</div><div class="w">'+o.word+'</div></button>';}).join('')+'</div>';
+  $('zHint').textContent='';$('zSay').onclick=function(){Z.play(w.aud);};setTimeout(function(){Z.play(w.aud);},400);
+  document.querySelectorAll('.pic').forEach(function(b){b.onclick=function(){var o=opts[+b.getAttribute('data-i')];zTotal++;
+    if(o===w){b.classList.add('good');Z.play('m_ok');addStar(b);zli++;$('zHint').textContent='答對了！';setTimeout(listenQ,1300);}
+    else{zMiss++;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');Z.play(w.aud);$('zHint').textContent='再聽一次喔';}};});}
+// ---------- 數學：積木進位（兩位數＋一位數） ----------
+var mq=[],mi=0,mMiss=0,ones=0,tens=0;
+function startMath(){mq=Z.mathQ(2,12,38);mi=0;mMiss=0;show('s-math');nextMath();}
+function drawMat(){$('rods').innerHTML=Array.from({length:tens},function(){return '<div class="rod"></div>';}).join('');
+  $('ones').innerHTML=Array.from({length:ones},function(_,i){return '<div class="cube'+(i>=ONES0?' blue':'')+'"></div>';}).join('');}
+var ONES0=0;
+function nextMath(){if(mi>=mq.length)return done('math');var q=mq[mi];steps('mSteps',mq.length,mi);tens=Math.floor(q.a/10);ones=q.a%10;ONES0=ones;
+  $('mEq').textContent=q.a+' ＋ '+q.b+' ＝ ？';$('mGuide').textContent='把紅色積木拖到「個位」（或點一下）！';$('answers').innerHTML='';$('mHint').textContent='';$('bundle').style.display='none';drawMat();
+  var sp=$('supply');sp.innerHTML='';for(var j=0;j<q.b;j++){var c=document.createElement('div');c.className='cube blue';sp.appendChild(c);(function(c){Z.drag(c,function(){return [$('cOnes')];},function(){return put(c);},function(){put(c);});})(c);}
+  Z.play(Z.numIds(q.a).concat(['m_plus']).concat(Z.numIds(q.b)).concat(['m_eqq']));}
+function put(c){c.classList.add('done');c.remove();ones++;drawMat();
+  if(!$('supply').children.length){if(ones>=10){$('mGuide').textContent='個位有 '+ones+' 個，滿 10 個了！按按鈕捆成 1 條十';$('bundle').style.display='block';Z.play(['m_carry']);}else answers();}
+  return true;}
+$('bundle').onclick=function(){var cs=document.querySelectorAll('#ones .cube');for(var i=0;i<10;i++)cs[i].classList.add('go');$('bundle').style.display='none';Z.play(['m_bundle']);
+  setTimeout(function(){ones-=10;tens++;ONES0=0;drawMat();var r=$('rods').lastChild;if(r)r.classList.add('new');$('mGuide').textContent='現在是 '+tens+' 個十和 '+ones+' 個一，答案是多少？';answers();},650);};
+function answers(){var q=mq[mi];var opts=Z.shuffle([q.s,q.s-10,q.s+1,q.s-1].filter(function(v,i,a){return v>0&&a.indexOf(v)===i;}));
+  $('answers').innerHTML=opts.map(function(v){return '<button class="ans" data-v="'+v+'">'+v+'</button>';}).join('');
+  document.querySelectorAll('.ans').forEach(function(b){b.onclick=function(){var v=+b.getAttribute('data-v');
+    if(v===q.s){b.classList.add('good');$('mHint').textContent='答對了！'+q.a+' ＋ '+q.b+' ＝ '+q.s;Z.play(['m_ok'].concat(Z.numIds(q.a)).concat(['m_plus']).concat(Z.numIds(q.b)).concat(['m_eq']).concat(Z.numIds(q.s)));addStar(b);mi++;setTimeout(nextMath,3800);}
+    else{mMiss++;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');$('mHint').textContent=v===q.s-10?'別忘了進位的那 1 條十喔！':'數數看十位和個位';Z.play('m_try');}};});}
+// ---------- 結果 ----------
+var last='zy';
+function done(k){last=k;var miss=k==='zy'?zMiss:mMiss;var st=miss===0?3:miss<=2?2:1;Z.confetti(30);
+  $('dBig').textContent=k==='zy'?'🐰':'🧸';$('dTitle').textContent=k==='zy'?'ㄓㄗ 分分看 過關！':'積木進位 過關！';$('dStars').textContent='⭐'.repeat(st)+'☆'.repeat(3-st);
+  $('dSub').textContent='原型示意：星星依答錯次數；正式版沿用「同一關闖 3 次（題目不重複）拿 1 顆星」';
+  var L=LV[k==='zy'?'zh':'ma'];L[1].st='done';L[1].s=st;L[2].st='next';Z.play(miss===0?'m_done':'m_done2');show('s-done');}
+$('dList').onclick=function(){tab=last==='zy'?'zh':'ma';list();show('s-list');};$('home').onclick=function(){Z.stop();list();show('s-list');};
+$('dAgain').onclick=function(){if(last==='zy')startZy();else startMath();};
+list();
+window.PB={startZy:startZy,startMath:startMath,get zCards(){return zCards;},get zListen(){return zListen;},get zli(){return zli;},get mq(){return mq;},get mi(){return mi;}};
+})();
+</script></body></html>
